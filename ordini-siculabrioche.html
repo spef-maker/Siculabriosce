@@ -950,12 +950,6 @@ document.getElementById('acInput').addEventListener('blur', ()=>{
   setTimeout(()=>{ document.getElementById('acList').style.display='none'; }, 150);
 });
 
-document.getElementById('btnAddRow').addEventListener('click', ()=>{
-  const f = document.getElementById('addRowForm');
-  f.style.display = f.style.display==='none'?'flex':'none';
-  if(f.style.display==='flex') document.getElementById('acInput').focus();
-});
-
 document.getElementById('btnCancelAdd').addEventListener('click', ()=>{
   document.getElementById('addRowForm').style.display='none';
   document.getElementById('acInput').value='';
@@ -1247,12 +1241,54 @@ function renderProduzione(){
 }
 
 
+function flashMsg(msg){
+  const el = document.createElement('div');
+  el.textContent = msg;
+  el.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--green);color:#fff;padding:10px 18px;border-radius:6px;font-weight:600;z-index:9999;';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2500);
+}
+
+function removeClient(cod){
+  if(!confirm('Eliminare questo cliente?')) return;
+  clients = clients.filter(c=>c.cod!==cod);
+  renderAnagrafica();
+  notifyChange();
+}
+
+function renderAnagrafica(){
+  const banner = document.getElementById('firstRunBanner');
+  if(banner) banner.style.display = clients.length===0 ? 'block' : 'none';
+
+  const q = (document.getElementById('anagSearch').value||'').trim().toLowerCase();
+  filteredClients = q
+    ? clients.filter(c=>c.nome.toLowerCase().includes(q)||c.cod.includes(q))
+    : clients;
+
+  document.getElementById('anagCount').textContent = `${filteredClients.length.toLocaleString()} clienti`;
+
+  const page = filteredClients.slice(0, (anagPage+1)*ANAG_PAGE_SIZE);
+  document.getElementById('anagBody').innerHTML = page.map(c=>`
+    <tr>
+      <td style="font-family:var(--mono);font-size:12px;">${esc(c.cod)}</td>
+      <td>${esc(c.nome)}</td>
+      <td><button class="btn sm" onclick="removeClient('${esc(c.cod)}')">🗑</button></td>
+    </tr>
+  `).join('') + (filteredClients.length > page.length
+    ? `<tr><td colspan="3" style="text-align:center;padding:12px;">
+        <button class="btn" onclick="anagPage++;renderAnagrafica();">Mostra altri…</button>
+      </td></tr>`
+    : '');
+}
+
 function saveLocal(){
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ orders, clients }));
+    const data = JSON.stringify({ orders, clients });
+    localStorage.setItem(STORAGE_KEY, data);
     setSyncStatus('ok','Salvato ✓');
   } catch(e){
-    setSyncStatus('err','Errore salvataggio locale');
+    // localStorage non disponibile (file locale) — funziona in memoria, usa Backup JSON per salvare
+    setSyncStatus('ok','In memoria · usa Backup JSON ↓');
   }
 }
 
@@ -1265,7 +1301,9 @@ function loadLocal(){
       if(data.orders) orders = data.orders;
       return true;
     }
-  } catch(e){}
+  } catch(e){
+    // localStorage non disponibile — dati solo in memoria questa sessione
+  }
   return false;
 }
 
