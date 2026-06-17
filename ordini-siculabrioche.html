@@ -325,13 +325,13 @@ table.anag tr:hover td{background:#faf8f4;}
   <!-- ── PRODUZIONE ── -->
   <div class="panel" id="tab-produzione">
     <div class="prod-settings no-print" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
-      <select id="prodSessionSelector" style="padding:7px 10px;border:1px solid var(--line-strong);border-radius:var(--radius);font-size:13px;background:#fff;max-width:280px;">
-        <option value="">— Seleziona sessione —</option>
-      </select>
+      <label style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:flex;align-items:center;gap:8px;">Filtra per data:
+        <input type="date" id="prodFilterDate" style="padding:6px 8px;border:1px solid var(--line-strong);border-radius:var(--radius);font-size:13px;background:#fff;">
+      </label>
+      <button class="btn" id="btnProdClearFilter">Mostra tutto</button>
       <button class="btn primary" id="btnPrintProd">🖨️ Stampa</button>
-      <span style="color:var(--muted);font-size:12px;margin-left:4px;">Filtra per data o mostra tutto</span>
     </div>
-    <div id="prodContent"><div class="empty">Seleziona una sessione dal menu per visualizzare la produzione.</div></div>
+    <div id="prodContent"><div class="empty">Aggiungi ordini per vedere il riepilogo produzione.</div></div>
   </div>
 
   <!-- ── ANAGRAFICA ── -->
@@ -1058,156 +1058,16 @@ document.getElementById('sessionDate').addEventListener('change', ()=>{
 // ══════════════════════════════════════════
 function renderProduzione(){
   const el = document.getElementById('prodContent');
+  if(!el) return;
 
-  // ── helpers ──
-  function calcPzForIdInRows(id, rowSet){
-    const p = PRODUCTS.find(x=>x.id===id);
-    if(!p) return 0;
-    return rowSet.reduce((acc,row)=>
-      acc + p.imballi.reduce((s,imb)=>
-        s + parseInt((row.qtys||{})[p.id]?.[imb]||0) * p.pz_per_imballo[imb], 0), 0);
-  }
-
-  const fmtN = n => n%1===0?n:n.toFixed(1);
-
-  function renderDateBlock(dateRows, sesDate){
-    const pzB  = calcPzForIdInRows('brioche',  dateRows);
-    const pzPa = calcPzForIdInRows('paffutella',dateRows);
-    const pzMg = calcPzForIdInRows('mini',     dateRows);
-    const pzM2 = pzMg/2;
-    const pzCh = calcPzForIdInRows('choco',    dateRows);
-    const pzPz = calcPzForIdInRows('panzotta', dateRows);
-    const pzMa = calcPzForIdInRows('mandorla', dateRows);
-    const pzLa = calcPzForIdInRows('lattante', dateRows);
-    const totImp = pzB + pzPa + pzM2;
-
-    // ── Summary cards ──
-    let h = `<div class="prod-summary-row no-print">`;
-    h += `<div class="prod-mini-card" style="border-color:var(--accent);">
-      <div class="prod-mini-label" style="background:var(--accent);">IMPASTATRICE</div>
-      <div class="prod-mini-val" style="color:var(--accent);">${fmtN(totImp)}</div>
-      <div class="prod-mini-sub">B:${pzB} Pa:${pzPa} M÷2:${fmtN(pzM2)}</div>
-    </div>`;
-    [
-      {label:'BRIOCHE',   val:pzB,  color:'#d4a800'},
-      {label:'PAFFUTELLA',val:pzPa, color:'#1a7a4a'},
-      {label:'MINI ÷2',  val:fmtN(pzM2),color:'#c0392b'},
-      {label:'CHOCO',    val:pzCh, color:'#6b3a1f'},
-      {label:'PANZOTTA', val:pzPz, color:'#7e3bb5'},
-      {label:'P.MANDORLA',val:pzMa,color:'#c47c00'},
-      {label:'P.LATTANTE',val:pzLa,color:'#1565a8'},
-    ].forEach(c=>{
-      h += `<div class="prod-mini-card">
-        <div class="prod-mini-label" style="background:${c.color};">${c.label}</div>
-        <div class="prod-mini-val">${c.val}</div>
-      </div>`;
-    });
-    h += `</div>`;
-
-    // ── Print summary ──
-    h += `<div class="print-summary print-only">
-      <table class="print-table">
-        <tr>
-          <th style="background:var(--accent);color:#fff;width:140px;">IMPASTATRICE TOTALE</th>
-          <td style="font-size:18px;font-weight:700;color:var(--accent);">${fmtN(totImp)} pz</td>
-          <th style="background:#d4a800;color:#fff;">BRIOCHE</th><td>${pzB}</td>
-          <th style="background:#1a7a4a;color:#fff;">PAFFUTELLA</th><td>${pzPa}</td>
-          <th style="background:#c0392b;color:#fff;">MINI ÷2</th><td>${fmtN(pzM2)}</td>
-          <th style="background:#6b3a1f;color:#fff;">CHOCO</th><td>${pzCh}</td>
-          <th style="background:#7e3bb5;color:#fff;">PANZOTTA</th><td>${pzPz}</td>
-        </tr>
-      </table>
-    </div>`;
-
-    // ── Client table ──
-    h += `<div class="print-client-table">
-      <table class="print-table" style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead>
-          <tr>
-            <th style="min-width:160px;text-align:left;">CLIENTE</th>`;
-
-    // Only show products that have at least one order in this date
-    const activeProd = PRODUCTS.filter(p=>
-      dateRows.some(row=> p.imballi.some(imb=> parseInt((row.qtys||{})[p.id]?.[imb]||0)>0))
-    );
-
-    activeProd.forEach(p=>{
-      const bg = p.color;
-      h += `<th colspan="${p.imballi.length}" style="background:${bg};color:#fff;">${p.name}</th>`;
-    });
-    h += `<th style="background:#333;color:#fff;">TOT PZ</th>
-            <th style="background:#2d4a6b;color:#fff;">CORRIERE</th>
-            <th style="background:#2d4a6b;color:#fff;min-width:100px;">NOTE</th>
-          </tr>
-          <tr>
-            <th></th>`;
-    activeProd.forEach(p=>{
-      const bg = p.color+'99';
-      p.imballi.forEach(imb=>{
-        const cellBg = (p.colorByImb&&p.colorByImb[imb]) ? p.colorByImb[imb]+'99' : bg;
-        h += `<th style="background:${cellBg};color:#fff;font-size:10px;">${imb}</th>`;
-      });
-    });
-    h += `<th></th><th></th><th></th></tr>
-        </thead>
-        <tbody>`;
-
-    let grandTotal = 0;
-    dateRows.forEach(row=>{
-      let rowPz = 0;
-      let cells = '';
-      activeProd.forEach(p=>{
-        p.imballi.forEach(imb=>{
-          const v = parseInt((row.qtys||{})[p.id]?.[imb]||0);
-          const cellBg = (p.colorLightByImb&&p.colorLightByImb[imb]) ? p.colorLightByImb[imb] : p.colorLight;
-          rowPz += v * p.pz_per_imballo[imb];
-          cells += `<td style="text-align:center;background:${cellBg};border:1px solid #ddd;">${v||''}</td>`;
-        });
-      });
-      grandTotal += rowPz;
-      const lav = row.dataLav ? `<span style="font-size:9px;color:#888;">Lav: ${fmtDate(row.dataLav)}</span>` : '';
-      const lottoTxt = row.lotto ? `<span style="font-size:9px;color:#888;"> · L.${row.lotto}</span>` : '';
-      h += `<tr>
-          <td style="border:1px solid #ddd;padding:3px 5px;">
-            ${row.clientCod?`<span style="font-size:9px;color:#999;display:block;">${esc(row.clientCod)}</span>`:''}
-            <strong>${esc(row.clientNome||'')}</strong>${lottoTxt}<br>${lav}
-          </td>
-          ${cells}
-          <td style="text-align:center;font-weight:700;border:1px solid #ddd;">${rowPz||''}</td>
-          <td style="text-align:center;border:1px solid #ddd;font-size:10px;font-weight:700;color:${row.corriere==='BRT'?'#c84b2f':row.corriere==='GLS'?'#2d5fa8':'#333'};">${row.corriere||''}</td>
-          <td style="border:1px solid #ddd;font-size:10px;padding:3px 5px;color:#555;">${esc(row.note||'')}</td>
-        </tr>`;
-    });
-
-    // Totals row
-    let totCells = '';
-    activeProd.forEach(p=>{
-      p.imballi.forEach(imb=>{
-        const tot = dateRows.reduce((s,row)=> s+parseInt((row.qtys||{})[p.id]?.[imb]||0),0);
-        const cellBg = (p.colorLightByImb&&p.colorLightByImb[imb]) ? p.colorLightByImb[imb] : p.colorLight;
-        totCells += `<td style="text-align:center;font-weight:700;background:${cellBg};border:1px solid #999;">${tot||''}</td>`;
-      });
-    });
-    h += `<tr style="background:#f0f0f0;">
-          <td style="font-weight:700;border:1px solid #999;padding:3px 5px;">TOTALE</td>
-          ${totCells}
-          <td style="text-align:center;font-weight:700;border:1px solid #999;">${grandTotal}</td>
-          <td style="border:1px solid #999;"></td><td style="border:1px solid #999;"></td>
-        </tr>`;
-
-    h += `</tbody></table></div>`;
-    return h;
-  }
-
-  function fmtDate(d){ if(!d) return '—'; const [y,m,g]=d.split('-'); return g+'/'+m+'/'+y; }
-
-  // ── Raggruppa tutte le sessioni per data ──
+  // ── Raccoglie tutti gli ordini da tutte le sessioni, raggruppati per data ──
   const byDate = {};
   Object.values(orders).forEach(ses=>{
     const date = ses.date || '__senza_data__';
-    if(!(ses.rows||[]).length) return;
-    if(!byDate[date]) byDate[date]=[];
-    ses.rows.forEach(row=>{ byDate[date].push(row); });
+    (ses.rows||[]).forEach(row=>{ 
+      if(!byDate[date]) byDate[date]=[];
+      byDate[date].push(row);
+    });
   });
 
   const sortedDates = Object.keys(byDate).sort((a,b)=>{
@@ -1216,254 +1076,176 @@ function renderProduzione(){
     return a.localeCompare(b);
   });
 
-  if(sortedDates.length===0){
+  if(sortedDates.length===0 || sortedDates.every(d=>byDate[d].length===0)){
     el.innerHTML = '<div class="empty">Nessun ordine inserito.</div>';
     return;
   }
 
-  // Aggiorna il selettore date con le date disponibili
-  renderProdSessionSelector();
-  const selEl = document.getElementById('prodSessionSelector');
-  const filterDate = selEl ? selEl.value : '';
+  const fmtN = n => n%1===0?n:n.toFixed(1);
+
+  function fmtDate(d){
+    if(!d) return '—';
+    const [y,m,g]=d.split('-');
+    return g+'/'+m+'/'+y;
+  }
+
+  function calcPz(id, rowSet){
+    const p = PRODUCTS.find(x=>x.id===id);
+    if(!p) return 0;
+    return rowSet.reduce((acc,row)=>
+      acc + p.imballi.reduce((s,imb)=>
+        s + parseInt((row.qtys||{})[p.id]?.[imb]||0) * p.pz_per_imballo[imb], 0), 0);
+  }
+
+  // Filtro data opzionale
+  const filterEl = document.getElementById('prodFilterDate');
+  const filterDate = filterEl ? filterEl.value : '';
+  const datesToShow = filterDate
+    ? sortedDates.filter(d=>d===filterDate)
+    : sortedDates;
 
   let html = '';
-  const datesToShow = filterDate ? [filterDate] : sortedDates;
 
   datesToShow.forEach(dateKey=>{
-    const dateRows = byDate[dateKey];
-    if(!dateRows || dateRows.length===0) return;
-    const label = dateKey==='__senza_data__' ? 'Data spedizione non specificata' : fmtDate(dateKey);
-    const dow = dateKey!=='__senza_data__' ? ` — ${['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][new Date(dateKey+'T00:00:00').getDay()]}` : '';
+    const rows = byDate[dateKey]||[];
+    if(!rows.length) return;
+
+    const label = dateKey==='__senza_data__' ? 'Data non specificata' : fmtDate(dateKey);
+    const dow = dateKey!=='__senza_data__'
+      ? ' — '+['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][new Date(dateKey+'T00:00:00').getDay()]
+      : '';
+
+    // totali per cards
+    const pzB  = calcPz('brioche',   rows);
+    const pzPa = calcPz('paffutella',rows);
+    const pzMg = calcPz('mini',      rows);
+    const pzM2 = pzMg/2;
+    const pzCh = calcPz('choco',     rows);
+    const pzPz = calcPz('panzotta',  rows);
+    const pzMa = calcPz('mandorla',  rows);
+    const pzLa = calcPz('lattante',  rows);
+    const totImp = pzB + pzPa + pzM2;
+
+    // cards riepilogo
+    let cards = `<div class="prod-summary-row no-print">`;
+    cards += `<div class="prod-mini-card" style="border:2px solid var(--accent);">
+      <div class="prod-mini-label" style="background:var(--accent);">IMPASTATRICE</div>
+      <div class="prod-mini-val" style="color:var(--accent);">${fmtN(totImp)}</div>
+      <div class="prod-mini-sub">B:${pzB} Pa:${pzPa} M÷2:${fmtN(pzM2)}</div>
+    </div>`;
+    [{id:'brioche',l:'BRIOCHE',c:'#d4a800'},{id:'paffutella',l:'PAFFUTELLA',c:'#1a7a4a'},
+     {id:'mini',l:'MINI ÷2',c:'#c0392b',div2:true},{id:'choco',l:'CHOCO',c:'#6b3a1f'},
+     {id:'panzotta',l:'PANZOTTA',c:'#7e3bb5'},{id:'mandorla',l:'P.MANDORLA',c:'#c47c00'},
+     {id:'lattante',l:'P.LATTANTE',c:'#1565a8'}].forEach(cfg=>{
+      const v = calcPz(cfg.id,rows);
+      cards += `<div class="prod-mini-card">
+        <div class="prod-mini-label" style="background:${cfg.c};">${cfg.l}</div>
+        <div class="prod-mini-val">${cfg.div2?fmtN(v/2):v}</div>
+      </div>`;
+    });
+    cards += `</div>`;
+
+    // stampa riepilogo
+    const printSummary = `<div class="print-summary print-only">
+      <table class="print-table"><tr>
+        <th style="background:var(--accent);color:#fff;">IMPASTATRICE</th>
+        <td style="font-size:16px;font-weight:700;color:var(--accent);">${fmtN(totImp)}</td>
+        <th style="background:#d4a800;color:#fff;">BRIOCHE</th><td>${pzB}</td>
+        <th style="background:#1a7a4a;color:#fff;">PAFFUTELLA</th><td>${pzPa}</td>
+        <th style="background:#c0392b;color:#fff;">MINI ÷2</th><td>${fmtN(pzM2)}</td>
+        <th style="background:#6b3a1f;color:#fff;">CHOCO</th><td>${pzCh}</td>
+        <th style="background:#7e3bb5;color:#fff;">PANZOTTA</th><td>${pzPz}</td>
+      </tr></table>
+    </div>`;
+
+    // tabella clienti — solo prodotti con almeno un ordine
+    const activeProd = PRODUCTS.filter(p=>
+      rows.some(row=>p.imballi.some(imb=>parseInt((row.qtys||{})[p.id]?.[imb]||0)>0))
+    );
+
+    let thead = `<thead><tr><th style="min-width:180px;text-align:left;">CLIENTE</th>`;
+    activeProd.forEach(p=>{
+      thead += `<th colspan="${p.imballi.length}" style="background:${p.color};color:#fff;">${p.name}</th>`;
+    });
+    thead += `<th style="background:#333;color:#fff;">TOT PZ</th>
+      <th style="background:#2d4a6b;color:#fff;">CORRIERE</th>
+      <th style="background:#2d4a6b;color:#fff;min-width:120px;">NOTE</th></tr><tr><th></th>`;
+    activeProd.forEach(p=>{
+      p.imballi.forEach(imb=>{
+        const bg=(p.colorByImb&&p.colorByImb[imb])?p.colorByImb[imb]+'bb':p.color+'bb';
+        thead += `<th style="background:${bg};color:#fff;font-size:10px;">${imb}</th>`;
+      });
+    });
+    thead += `<th></th><th></th><th></th></tr></thead>`;
+
+    let tbody = '<tbody>';
+    let grandTotal = 0;
+    rows.forEach(row=>{
+      let rowPz=0; let cells='';
+      activeProd.forEach(p=>{
+        p.imballi.forEach(imb=>{
+          const v=parseInt((row.qtys||{})[p.id]?.[imb]||0);
+          const bg=(p.colorLightByImb&&p.colorLightByImb[imb])||p.colorLight;
+          rowPz+=v*p.pz_per_imballo[imb];
+          cells+=`<td style="text-align:center;background:${bg};border:1px solid #ddd;">${v||''}</td>`;
+        });
+      });
+      grandTotal+=rowPz;
+      const corrBg=row.corriere==='BRT'?'#c84b2f':row.corriere==='GLS'?'#2d5fa8':'transparent';
+      const corrCol=row.corriere?'#fff':'inherit';
+      tbody+=`<tr>
+        <td style="border:1px solid #ddd;padding:3px 6px;">
+          ${row.clientCod?`<span style="font-size:9px;color:#999;display:block;">${esc(row.clientCod)}</span>`:''}
+          <strong>${esc(row.clientNome||'')}</strong>
+          ${row.lotto?`<span style="font-size:9px;color:#888;"> · L.${esc(row.lotto)}</span>`:''}
+        </td>
+        ${cells}
+        <td style="text-align:center;font-weight:700;border:1px solid #ddd;">${rowPz||''}</td>
+        <td style="text-align:center;border:1px solid #ddd;">
+          <span style="background:${corrBg};color:${corrCol};padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700;">${row.corriere||''}</span>
+        </td>
+        <td style="border:1px solid #ddd;padding:3px 6px;font-size:11px;color:#555;">${esc(row.note||'')}</td>
+      </tr>`;
+    });
+
+    // riga totali
+    let totCells='';
+    activeProd.forEach(p=>{
+      p.imballi.forEach(imb=>{
+        const tot=rows.reduce((s,row)=>s+parseInt((row.qtys||{})[p.id]?.[imb]||0),0);
+        const bg=(p.colorLightByImb&&p.colorLightByImb[imb])||p.colorLight;
+        totCells+=`<td style="text-align:center;font-weight:700;background:${bg};border:1px solid #999;">${tot||''}</td>`;
+      });
+    });
+    tbody+=`<tr style="background:#f0f0f0;">
+      <td style="font-weight:700;border:1px solid #999;padding:3px 6px;">TOTALE</td>
+      ${totCells}
+      <td style="text-align:center;font-weight:700;border:1px solid #999;">${grandTotal}</td>
+      <td style="border:1px solid #999;"></td><td style="border:1px solid #999;"></td>
+    </tr></tbody>`;
 
     html += `<div class="prod-section print-section">
       <div class="prod-date-header">
         <h3>📅 Spedizione: <strong>${label}${dow}</strong>
-          <span style="font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);margin-left:12px;">${dateRows.length} clienti</span>
+          <span style="font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);margin-left:12px;">${rows.length} clienti</span>
         </h3>
       </div>
-      <div class="print-header print-only" style="margin-bottom:14px;border-bottom:2px solid #000;padding-bottom:8px;">
-        <strong style="font-family:Georgia,serif;font-size:16px;">Siculabrioche · Foglio di Produzione</strong><br>
-        <span style="font-size:13px;">Spedizione: <strong>${label}${dow}</strong> · ${dateRows.length} clienti</span>
+      <div class="print-header print-only" style="margin-bottom:10px;border-bottom:2px solid #000;padding-bottom:6px;">
+        <strong style="font-size:15px;">Siculabrioche · Foglio di Produzione</strong><br>
+        <span>Spedizione: <strong>${label}${dow}</strong> · ${rows.length} clienti</span>
       </div>
-      ${renderDateBlock(dateRows, dateKey)}
+      ${cards}
+      ${printSummary}
+      <div class="print-client-table">
+        <table class="print-table">${thead}${tbody}</table>
+      </div>
     </div>`;
   });
 
-  if(!html) html = '<div class="empty">Nessun ordine per la data selezionata.</div>';
+  if(!html) html='<div class="empty">Nessun ordine per la data selezionata.</div>';
   el.innerHTML = html;
 }
 
-function renderProdSessionSelector(){
-  const sel = document.getElementById('prodSessionSelector');
-  if(!sel) return;
-
-  // Collect unique dates that have orders
-  const dateMap = {};
-  Object.values(orders).forEach(ses=>{
-    if(!(ses.rows||[]).length) return;
-    const d = ses.date || '__senza_data__';
-    if(!dateMap[d]) dateMap[d] = 0;
-    dateMap[d] += ses.rows.length;
-  });
-
-  const dates = Object.keys(dateMap).sort((a,b)=>{
-    if(a==='__senza_data__') return 1;
-    if(b==='__senza_data__') return -1;
-    return b.localeCompare(a); // newest first
-  });
-
-  const currentVal = sel.value;
-
-  sel.innerHTML = '<option value="">— Tutte le date —</option>' +
-    dates.map(d=>{
-      const label = d==='__senza_data__' ? 'Senza data' :
-        fmtDate(d) + ' · ' + ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][new Date(d+'T00:00:00').getDay()];
-      return `<option value="${d}">${label} (${dateMap[d]} clienti)</option>`;
-    }).join('');
-
-  // Restore previous selection if still valid
-  if(currentVal && dateMap[currentVal]){
-    sel.value = currentVal;
-  }
-}
-
-// Stampa solo una data specifica
-function printDate(dateKey){
-  const sections = document.querySelectorAll('.prod-section');
-  sections.forEach(s=> s.classList.remove('print-active'));
-  sections.forEach(s=>{
-    const h = s.querySelector('.prod-date-header h3');
-    if(h && (dateKey==='__senza_data__' ? h.textContent.includes('non specificata') : h.textContent.includes(dateKey.split('-').reverse().join('/')))){
-      s.classList.add('print-active');
-    }
-  });
-  document.body.classList.add('printing-single');
-  window.print();
-  setTimeout(()=>{
-    document.body.classList.remove('printing-single');
-    sections.forEach(s=> s.classList.remove('print-active'));
-  }, 1000);
-}
-
-
-function renderAnagrafica(){
-  const banner = document.getElementById('firstRunBanner');
-  if(banner) banner.style.display = clients.length === 0 ? 'block' : 'none';
-
-  const q = (document.getElementById('anagSearch').value||'').trim().toLowerCase();
-  filteredClients = q
-    ? clients.filter(c=>c.nome.toLowerCase().includes(q)||c.cod.includes(q))
-    : clients;
-
-  document.getElementById('anagCount').textContent = `${filteredClients.length.toLocaleString()} clienti`;
-
-  const page = filteredClients.slice(0, (anagPage+1)*ANAG_PAGE_SIZE);
-  document.getElementById('anagBody').innerHTML = page.map(c=>`
-    <tr>
-      <td style="font-family:var(--mono);font-size:12px;">${esc(c.cod)}</td>
-      <td>${esc(c.nome)}</td>
-      <td><button class="btn sm" onclick="removeClient('${esc(c.cod)}')">🗑</button></td>
-    </tr>
-  `).join('') + (filteredClients.length > page.length
-    ? `<tr><td colspan="3" style="text-align:center;padding:12px;">
-        <button class="btn" onclick="anagPage++;renderAnagrafica();">Mostra altri…</button>
-      </td></tr>`
-    : '');
-}
-
-function removeClient(cod){
-  if(!confirm('Eliminare questo cliente?')) return;
-  clients = clients.filter(c=>c.cod!==cod);
-  renderAnagrafica();
-  notifyChange();
-}
-
-document.getElementById('anagSearch').addEventListener('input', ()=>{ anagPage=0; renderAnagrafica(); });
-
-document.getElementById('btnAddClient').addEventListener('click', ()=>{
-  const cod = prompt('Codice cliente:'); if(!cod) return;
-  const nome = prompt('Ragione sociale:'); if(!nome) return;
-  if(clients.find(c=>c.cod===cod)){ alert('Codice già esistente.'); return; }
-  clients.push({cod:cod.trim(), nome:nome.trim().toUpperCase()});
-  clients.sort((a,b)=>a.nome.localeCompare(b.nome));
-  renderAnagrafica();
-  notifyChange();
-});
-
-// File upload handler
-document.getElementById('anagUpload').addEventListener('change', function(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev){
-    let text = ev.target.result;
-    // Remove BOM if present (utf-8-sig)
-    if(text.charCodeAt(0)===0xFEFF) text = text.slice(1);
-    const lines = text.split(/\r?\n/).filter(l=>l.trim());
-    const parsed = [];
-    lines.forEach((line,i)=>{
-      // skip header row
-      const low = line.toLowerCase();
-      if(i===0 && (low.includes('codice')||low.includes('ragione')||low.includes('code')||low.includes('nome'))) return;
-      // split by ; , or tab
-      const parts = line.split(/[,;\t]/).map(s=>s.trim().replace(/^["']|["']$/g,''));
-      if(parts.length>=2 && parts[0] && parts[1]){
-        parsed.push({cod:parts[0], nome:parts[1].toUpperCase()});
-      }
-    });
-    if(parsed.length > 0){
-      if(confirm(`Trovati ${parsed.length} clienti. Caricare nell'anagrafica?`)){
-        clients = parsed;
-        renderAnagrafica();
-        notifyChange();
-        flashMsg(`✓ ${parsed.length} clienti caricati con successo!`);
-        // Switch to anagrafica tab to confirm
-      }
-    } else {
-      alert('Nessun cliente trovato.\n\nAssicurati che il file sia in formato CSV con separatore ";" e colonne:\nCODICE;RAGIONE SOCIALE');
-    }
-  };
-  reader.readAsText(file, 'utf-8');
-  e.target.value='';
-});
-
-function flashMsg(msg){
-  const el = document.createElement('div');
-  el.textContent = msg;
-  el.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--green);color:#fff;padding:10px 18px;border-radius:6px;font-weight:600;z-index:9999;';
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(), 2500);
-}
-
-// ══════════════════════════════════════════
-// TABS
-// ══════════════════════════════════════════
-document.querySelectorAll('.tab').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-    if(btn.dataset.tab==='produzione') renderProduzione();
-    if(btn.dataset.tab==='anagrafica') renderAnagrafica();
-  });
-});
-
-// PDF
-document.getElementById('btnExportPdf').addEventListener('click', ()=>window.print());
-
-// Prod session selector
-document.getElementById('prodSessionSelector').addEventListener('change', ()=>{
-  renderProduzione();
-});
-document.getElementById('btnPrintProd').addEventListener('click', ()=>{
-  window.print();
-});
-
-// Backup / Restore
-document.getElementById('btnBackup').addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify({orders, clients}, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href=url; a.download='ordini-backup-'+todayStr()+'.json';
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
-  flashMsg('Backup scaricato ✓');
-});
-document.getElementById('btnRestore').addEventListener('change', function(e){
-  const file = e.target.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try{
-      const data = JSON.parse(ev.target.result);
-      if(data.clients && Array.isArray(data.clients)) clients = data.clients;
-      if(data.orders) orders = data.orders;
-      saveLocal();
-      ensureSession();
-      renderGrid();
-      renderProduzione();
-      renderAnagrafica();
-      flashMsg('Dati ripristinati ✓');
-    } catch(err){ alert('File non valido.'); }
-  };
-  reader.readAsText(file);
-  e.target.value='';
-});
-
-// target change
-document.getElementById('targetTotal')?.addEventListener('input', ()=>{
-  renderGrid();
-  renderProduzione();
-});
-
-// Init date
-document.getElementById('sessionDate').value = todayStr();
-
-// ══════════════════════════════════════════
-// SALVATAGGIO LOCALE (localStorage)
-// Funziona aprendo il file direttamente dal computer
-// ══════════════════════════════════════════
-const STORAGE_KEY = 'ordini_siculabrioche_v1';
 
 function saveLocal(){
   try{
@@ -1489,13 +1271,156 @@ function loadLocal(){
 
 notifyChange = () => { saveLocal(); };
 
+// ── Event listeners ──
+document.getElementById('btnExportPdf').addEventListener('click', ()=>window.print());
+document.getElementById('btnPrintProd').addEventListener('click', ()=>window.print());
+
+document.getElementById('btnProdClearFilter').addEventListener('click', ()=>{
+  document.getElementById('prodFilterDate').value='';
+  renderProduzione();
+});
+document.getElementById('prodFilterDate').addEventListener('change', ()=>renderProduzione());
+
+document.getElementById('btnBackup').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify({orders, clients}, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='ordini-backup-'+todayStr()+'.json';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  flashMsg('Backup scaricato ✓');
+});
+
+document.getElementById('btnRestore').addEventListener('change', function(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(data.clients && Array.isArray(data.clients)) clients = data.clients;
+      if(data.orders) orders = data.orders;
+      saveLocal();
+      ensureSession();
+      renderGrid();
+      renderProduzione();
+      renderAnagrafica();
+      flashMsg('Dati ripristinati ✓');
+    } catch(err){ alert('File non valido.'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+});
+
+document.getElementById('btnNewSession').addEventListener('click', ()=>{
+  const date = document.getElementById('sessionDate').value || todayStr();
+  if(!confirm(`Avviare una nuova sessione per il ${fmtDateSimple(date)}?\nLa sessione corrente viene conservata.`)) return;
+  currentSession = 'ses_'+date.replace(/-/g,'')+'_'+Math.random().toString(36).slice(2,6);
+  orders[currentSession] = { date, rows:[] };
+  renderSessionSelector();
+  renderGrid();
+  renderProduzione();
+  notifyChange();
+});
+
+document.getElementById('sessionSelector').addEventListener('change', function(){
+  const id = this.value; if(!id) return;
+  currentSession = id;
+  renderGrid();
+  renderProduzione();
+});
+
+document.getElementById('btnDeleteSession').addEventListener('click', ()=>{
+  if(!currentSession || !orders[currentSession]) return;
+  const ses = orders[currentSession];
+  if(!confirm(`Eliminare la sessione del ${fmtDateSimple(ses.date)} con ${(ses.rows||[]).length} clienti?`)) return;
+  delete orders[currentSession];
+  currentSession = null;
+  ensureSession();
+  renderSessionSelector();
+  renderGrid();
+  renderProduzione();
+  notifyChange();
+});
+
+document.getElementById('sessionDate').addEventListener('change', ()=>{
+  const date = document.getElementById('sessionDate').value;
+  if(!date) return;
+  const existing = Object.keys(orders).find(k=>orders[k].date===date);
+  if(existing){ currentSession = existing; }
+  else { currentSession=null; ensureSession(); }
+  renderGrid();
+  renderProduzione();
+});
+
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='produzione') renderProduzione();
+    if(btn.dataset.tab==='anagrafica') renderAnagrafica();
+  });
+});
+
+document.getElementById('btnAddRow').addEventListener('click', ()=>{
+  const f = document.getElementById('addRowForm');
+  f.style.display = f.style.display==='none'?'flex':'none';
+  if(f.style.display==='flex') document.getElementById('acInput').focus();
+});
+
+document.getElementById('btnCancelAdd').addEventListener('click', ()=>{
+  document.getElementById('addRowForm').style.display='none';
+  document.getElementById('acInput').value='';
+  selectedClient=null;
+  document.getElementById('recentOrderAlert').style.display='none';
+});
+
+document.getElementById('briocheTotale').addEventListener('input', ()=>updateBriocheCounter());
+
+document.getElementById('anagSearch').addEventListener('input', ()=>{ anagPage=0; renderAnagrafica(); });
+
+document.getElementById('btnAddClient').addEventListener('click', ()=>{
+  const cod = prompt('Codice cliente:'); if(!cod) return;
+  const nome = prompt('Ragione sociale:'); if(!nome) return;
+  if(clients.find(c=>c.cod===cod)){ alert('Codice già esistente.'); return; }
+  clients.push({cod:cod.trim(), nome:nome.trim().toUpperCase()});
+  clients.sort((a,b)=>a.nome.localeCompare(b.nome));
+  renderAnagrafica();
+  notifyChange();
+});
+
+document.getElementById('anagUpload').addEventListener('change', function(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    let text = ev.target.result;
+    if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+    const lines = text.split(/\r?\n/).filter(l=>l.trim());
+    const parsed = [];
+    lines.forEach((line,i)=>{
+      const low=line.toLowerCase();
+      if(i===0&&(low.includes('codice')||low.includes('ragione')||low.includes('code'))) return;
+      const parts=line.split(/[,;\t]/).map(s=>s.trim().replace(/^["']|["']$/g,''));
+      if(parts.length>=2&&parts[0]&&parts[1]) parsed.push({cod:parts[0],nome:parts[1].toUpperCase()});
+    });
+    if(parsed.length>0){
+      if(confirm(`Trovati ${parsed.length} clienti. Caricare?`)){
+        clients=parsed; renderAnagrafica(); notifyChange();
+        flashMsg(`✓ ${parsed.length} clienti caricati!`);
+      }
+    } else { alert('Nessun cliente trovato. Usa CSV con separatore ";"'); }
+  };
+  reader.readAsText(file,'utf-8');
+  e.target.value='';
+});
+
 // ── Init ──
 loadLocal();
 document.getElementById('loading').classList.remove('vis');
 setSyncStatus('ok','Locale · dati nel browser');
 ensureSession();
 renderSessionSelector();
-renderProdSessionSelector();
 renderGrid();
 renderProduzione();
 renderAnagrafica();
