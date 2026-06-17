@@ -228,7 +228,7 @@ table.anag tr:hover td{background:#faf8f4;}
   .print-section:last-child{page-break-after:avoid;}
 
   /* A4 portrait optimizations */
-  @page{size:A4 portrait;margin:12mm 10mm 12mm 10mm;}
+  @page{size:A4 landscape;margin:10mm 12mm 10mm 12mm;}
 
   /* Company header on print */
   .main::before{
@@ -243,6 +243,9 @@ table.anag tr:hover td{background:#faf8f4;}
   }
 }
 </style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
 
 </head>
 <body>
@@ -325,7 +328,8 @@ table.anag tr:hover td{background:#faf8f4;}
   <!-- ── PRODUZIONE ── -->
   <div class="panel" id="tab-produzione">
     <div class="prod-settings no-print" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
-      <label style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:flex;align-items:center;gap:8px;">Filtra per data:
+      <label style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:flex;align-items:center;gap:8px;">
+        Filtra per data lavorazione:
         <input type="date" id="prodFilterDate" style="padding:6px 8px;border:1px solid var(--line-strong);border-radius:var(--radius);font-size:13px;background:#fff;">
       </label>
       <button class="btn" id="btnProdClearFilter">Mostra tutto</button>
@@ -380,12 +384,12 @@ const firebaseConfig = {
 // PRODOTTI + IMBALLI
 // ══════════════════════════════════════════
 const PRODUCTS = [
-  { id:'brioche',    name:'BRIOCHE',           imballi:[112,104,52,26],      pz_per_imballo:{112:112,104:104,52:52,26:26},          unit:'imballi', color:'#d4a800', colorLight:'#fff8dc' },
+  { id:'brioche',    name:'BRIOCHE',           imballi:[112,52,26],          pz_per_imballo:{112:112,52:52,26:26},          unit:'imballi', color:'#d4a800', colorLight:'#fff8dc' },
   { id:'mini',       name:'MINI',              imballi:[112,52,26],           pz_per_imballo:{112:112,52:52,26:26},                  unit:'imballi', color:'#c0392b', colorLight:'#fde8e6' },
   { id:'paffutella', name:'PAFFUTELLA',        imballi:[26,52,112,20,40,80],  pz_per_imballo:{26:26,52:52,112:112,20:20,40:40,80:80}, unit:'imballi', color:'#1a7a4a', colorLight:'#e0f5ea',
     colorByImb:{26:'#2ecc71',52:'#2ecc71',112:'#2ecc71', 20:'#145a32',40:'#145a32',80:'#145a32'},
     colorLightByImb:{26:'#d5f5e3',52:'#d5f5e3',112:'#d5f5e3', 20:'#a9dfbf',40:'#a9dfbf',80:'#a9dfbf'} },
-  { id:'panzotta',   name:'PANZOTTA',          imballi:[112,104,52,26],       pz_per_imballo:{112:112,104:104,52:52,26:26},          unit:'imballi', color:'#7e3bb5', colorLight:'#f0e5fa' },
+  { id:'panzotta',   name:'PANZOTTA',          imballi:[112,52,26],           pz_per_imballo:{112:112,52:52,26:26},          unit:'imballi', color:'#7e3bb5', colorLight:'#f0e5fa' },
   { id:'choco',      name:'BRIOSCIA CHOCO',    imballi:[112,52,26],           pz_per_imballo:{112:112,52:52,26:26},                  unit:'imballi', color:'#6b3a1f', colorLight:'#f5ece6' },
   { id:'mandorla',   name:'PASTA MANDORLA',    imballi:['pz'],                pz_per_imballo:{pz:1},                                unit:'pz',      color:'#c47c00', colorLight:'#fff3e0' },
   { id:'lattante',   name:'PASTA LATTANTE',    imballi:['pz'],                pz_per_imballo:{pz:1},                                unit:'pz',      color:'#1565a8', colorLight:'#e3edf8' },
@@ -1031,21 +1035,6 @@ document.getElementById('btnDeleteSession').addEventListener('click', ()=>{
   notifyChange();
 });
 
-document.getElementById('sessionDate').addEventListener('change', ()=>{
-  const date = document.getElementById('sessionDate').value;
-  if(!date) return;
-  // Look for an existing session for this date
-  const existing = Object.keys(orders).find(k=> orders[k].date === date);
-  if(existing){
-    currentSession = existing;
-  } else {
-    // create new session for this date
-    currentSession = null;
-    ensureSession();
-  }
-  renderGrid();
-  renderProduzione();
-});
 
 // ══════════════════════════════════════════
 // PRODUZIONE
@@ -1057,8 +1046,9 @@ function renderProduzione(){
   // ── Raccoglie tutti gli ordini da tutte le sessioni, raggruppati per data ──
   const byDate = {};
   Object.values(orders).forEach(ses=>{
-    const date = ses.date || '__senza_data__';
     (ses.rows||[]).forEach(row=>{ 
+      // Usa dataLav se presente, altrimenti dataRic, altrimenti data sessione
+      const date = row.dataLav || row.dataRic || ses.date || '__senza_data__';
       if(!byDate[date]) byDate[date]=[];
       byDate[date].push(row);
     });
@@ -1211,7 +1201,7 @@ function renderProduzione(){
         totCells+=`<td style="text-align:center;font-weight:700;background:${bg};border:1px solid #999;">${tot||''}</td>`;
       });
     });
-    tbody+=`<tr style="background:#f0f0f0;">
+    tbody+=`<tr class="no-print" style="background:#f0f0f0;">
       <td style="font-weight:700;border:1px solid #999;padding:3px 6px;">TOTALE</td>
       ${totCells}
       <td style="text-align:center;font-weight:700;border:1px solid #999;">${grandTotal}</td>
@@ -1220,13 +1210,13 @@ function renderProduzione(){
 
     html += `<div class="prod-section print-section">
       <div class="prod-date-header">
-        <h3>📅 Spedizione: <strong>${label}${dow}</strong>
+        <h3>📅 Lavorazione: <strong>${label}${dow}</strong>
           <span style="font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);margin-left:12px;">${rows.length} clienti</span>
         </h3>
       </div>
       <div class="print-header print-only" style="margin-bottom:10px;border-bottom:2px solid #000;padding-bottom:6px;">
         <strong style="font-size:15px;">Siculabrioche · Foglio di Produzione</strong><br>
-        <span>Spedizione: <strong>${label}${dow}</strong> · ${rows.length} clienti</span>
+        <span>Lavorazione: <strong>${label}${dow}</strong> · ${rows.length} clienti</span>
       </div>
       ${cards}
       ${printSummary}
@@ -1281,15 +1271,17 @@ function renderAnagrafica(){
     : '');
 }
 
+// ══════════════════════════════════════════
+// STORAGE — Firebase (sync) + localStorage (fallback)
+// ══════════════════════════════════════════
+const STORAGE_KEY = 'ordini_siculabrioche_v1';
+let db = null;
+let isSaving = false;
+let isRemoteUpdate = false;
+let saveDebounce = null;
+
 function saveLocal(){
-  try{
-    const data = JSON.stringify({ orders, clients });
-    localStorage.setItem(STORAGE_KEY, data);
-    setSyncStatus('ok','Salvato ✓');
-  } catch(e){
-    // localStorage non disponibile (file locale) — funziona in memoria, usa Backup JSON per salvare
-    setSyncStatus('ok','In memoria · usa Backup JSON ↓');
-  }
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({orders,clients})); } catch(e){}
 }
 
 function loadLocal(){
@@ -1301,13 +1293,131 @@ function loadLocal(){
       if(data.orders) orders = data.orders;
       return true;
     }
-  } catch(e){
-    // localStorage non disponibile — dati solo in memoria questa sessione
-  }
+  } catch(e){}
   return false;
 }
 
-notifyChange = () => { saveLocal(); };
+function initFirebase(){
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+
+    notifyChange = ()=>{
+      if(isRemoteUpdate) return;
+      saveLocal();
+      setSyncStatus('saving','Salvataggio…');
+      if(saveDebounce) clearTimeout(saveDebounce);
+      saveDebounce = setTimeout(()=>{
+        isSaving = true;
+        // Salva solo la sessione corrente + clienti, non sovrascrive tutto
+        const updates = {};
+        updates[`ordini_siculabrioche/v1/clients`] = clients;
+        if(currentSession && orders[currentSession]){
+          updates[`ordini_siculabrioche/v1/orders/${currentSession}`] = orders[currentSession];
+        }
+        db.ref().update(updates)
+          .then(()=>{ setSyncStatus('ok','Sincronizzato ✓'); isSaving=false; saveDebounce=null; })
+          .catch(()=>{ setSyncStatus('err','Errore sync'); isSaving=false; });
+      }, 1200);
+    };
+
+    let firstLoad = true;
+
+    db.ref('ordini_siculabrioche/v1').on('value', snap=>{
+      // Durante un nostro salvataggio ignora l'echo
+      if(isSaving || saveDebounce){
+        document.getElementById('loading').classList.remove('vis');
+        setSyncStatus('ok','Sincronizzato ✓');
+        return;
+      }
+
+      const data = snap.val();
+
+      if(firstLoad){
+        firstLoad = false;
+        if(data && (data.orders || data.clients)){
+          // Firebase ha dati → usa quelli
+          isRemoteUpdate = true;
+          if(data.clients && Array.isArray(data.clients)) clients = data.clients;
+          if(data.orders) orders = data.orders;
+          saveLocal();
+          setTimeout(()=>{ isRemoteUpdate=false; }, 0);
+        } else {
+          // Firebase vuoto → carica i dati locali
+          const hasLocalData = Object.keys(orders).length > 0 || clients.length > 0;
+          if(hasLocalData){
+            setSyncStatus('saving','Caricamento dati su Firebase…');
+            db.ref('ordini_siculabrioche/v1').set({orders, clients})
+              .then(()=>setSyncStatus('ok','Dati caricati ✓'))
+              .catch(()=>setSyncStatus('err','Errore caricamento'));
+          }
+        }
+      } else {
+        // Aggiornamento da un'altra persona
+        isRemoteUpdate = true;
+        if(data){
+          if(data.clients && Array.isArray(data.clients)) clients = data.clients;
+          if(data.orders) orders = data.orders;
+          saveLocal();
+        }
+        setTimeout(()=>{ isRemoteUpdate=false; }, 0);
+      }
+
+      document.getElementById('loading').classList.remove('vis');
+      setSyncStatus('ok','Connesso ✓');
+      ensureSession();
+      renderSessionSelector();
+
+      // Re-render solo se non stai digitando in una cella
+      const activeEl = document.activeElement;
+      const isTyping = activeEl && (activeEl.classList.contains('qty-input') ||
+                                     activeEl.classList.contains('meta-input') ||
+                                     activeEl.classList.contains('note-input') ||
+                                     activeEl.classList.contains('ac-input'));
+      if(!isTyping){
+        renderGrid();
+        renderProduzione();
+        renderAnagrafica();
+        updateBriocheCounter();
+      } else {
+        // Aggiorna solo i totali senza distruggere il DOM
+        setSyncStatus('ok','Connesso ✓ (aggiornamento in attesa…)');
+        // Quando l'utente finisce di digitare, aggiorna
+        const waitForBlur = ()=>{
+          renderGrid();
+          renderProduzione();
+          updateBriocheCounter();
+          activeEl.removeEventListener('blur', waitForBlur);
+        };
+        activeEl.addEventListener('blur', waitForBlur);
+      }
+
+    }, err=>{
+      console.warn('Firebase error:', err);
+      document.getElementById('loading').classList.remove('vis');
+      setSyncStatus('err','Offline · dati locali');
+      fallbackInit();
+    });
+
+  } catch(e){
+    console.warn('Firebase init error:', e);
+    document.getElementById('loading').classList.remove('vis');
+    setSyncStatus('err','Offline · dati locali');
+    fallbackInit();
+  }
+}
+
+function fallbackInit(){
+  notifyChange = ()=>{ saveLocal(); setSyncStatus('ok','Salvato localmente ✓'); };
+  loadLocal();
+  ensureSession();
+  renderSessionSelector();
+  renderGrid();
+  renderProduzione();
+  renderAnagrafica();
+  updateBriocheCounter();
+}
+
 
 // ── Event listeners ──
 document.getElementById('btnExportPdf').addEventListener('click', ()=>window.print());
@@ -1342,7 +1452,15 @@ document.getElementById('btnRestore').addEventListener('change', function(e){
       renderGrid();
       renderProduzione();
       renderAnagrafica();
-      flashMsg('Dati ripristinati ✓');
+      // Salva subito su Firebase così tutte le colleghe vedono i dati
+      if(db){
+        setSyncStatus('saving','Caricamento su Firebase…');
+        db.ref('ordini_siculabrioche/v1').set({orders, clients})
+          .then(()=>{ setSyncStatus('ok','Dati condivisi ✓'); flashMsg('✓ Dati ripristinati e condivisi con tutte le colleghe!'); })
+          .catch(()=>{ flashMsg('Dati ripristinati localmente (errore Firebase)'); });
+      } else {
+        flashMsg('✓ Dati ripristinati');
+      }
     } catch(err){ alert('File non valido.'); }
   };
   reader.readAsText(file);
@@ -1383,11 +1501,23 @@ document.getElementById('btnDeleteSession').addEventListener('click', ()=>{
 document.getElementById('sessionDate').addEventListener('change', ()=>{
   const date = document.getElementById('sessionDate').value;
   if(!date) return;
+  // Cerca sessione esistente per questa data
   const existing = Object.keys(orders).find(k=>orders[k].date===date);
-  if(existing){ currentSession = existing; }
-  else { currentSession=null; ensureSession(); }
+  if(existing){
+    currentSession = existing;
+  } else {
+    // Aggiorna la data della sessione corrente (non crearne una nuova)
+    if(currentSession && orders[currentSession]){
+      orders[currentSession].date = date;
+    } else {
+      currentSession = null;
+      ensureSession();
+    }
+  }
+  renderSessionSelector();
   renderGrid();
   renderProduzione();
+  notifyChange();
 });
 
 document.querySelectorAll('.tab').forEach(btn=>{
@@ -1454,15 +1584,14 @@ document.getElementById('anagUpload').addEventListener('change', function(e){
 });
 
 // ── Init ──
-loadLocal();
-document.getElementById('loading').classList.remove('vis');
-setSyncStatus('ok','Locale · dati nel browser');
+loadLocal(); // carica dati locali subito (evita schermata vuota)
 ensureSession();
 renderSessionSelector();
 renderGrid();
 renderProduzione();
 renderAnagrafica();
 updateBriocheCounter();
+initFirebase(); // poi sincronizza con Firebase
 </script>
 </body>
 </html>
