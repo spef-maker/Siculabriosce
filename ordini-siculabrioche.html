@@ -287,6 +287,7 @@ table.anag tr:hover td{background:#faf8f4;}
         <option value="">— Sessioni precedenti —</option>
       </select>
       <button class="btn" id="btnDeleteSession" title="Elimina sessione corrente" style="color:var(--accent);">🗑 Elimina sessione</button>
+      <button class="btn" id="btnDeleteEmptySessions" title="Elimina tutte le sessioni senza clienti" style="color:#888;">🗑 Elimina sessioni vuote</button>
       <button class="btn" id="btnExportPdf">Esporta PDF</button>
       <button class="btn" id="btnBackup">💾 Backup JSON</button>
       <label class="btn" for="btnRestore" style="cursor:pointer;">📂 Ripristina JSON</label>
@@ -310,7 +311,7 @@ table.anag tr:hover td{background:#faf8f4;}
           style="width:90px;padding:6px 8px;border:1px solid #d4a800;border-radius:4px;font-size:15px;font-family:var(--mono);font-weight:700;text-align:center;background:#fff;">
       </label>
       <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:13px;color:var(--muted);">Ordinate oggi:</span>
+        <span style="font-size:13px;color:var(--muted);">Ordinate per questa data:</span>
         <span id="briocheOrdinate" style="font-family:var(--mono);font-size:18px;font-weight:700;color:#d4a800;">0</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;border-left:2px solid #d4a800;padding-left:18px;">
@@ -463,7 +464,7 @@ const IMBALLO_LABELS = { gross8:'GR.8', camp:'CAMP.', pz:'PZ' };
 function imbLabel(imb){ return IMBALLO_LABELS[imb] || imb; }
 
 const PRODUCTS = [
-  { id:'brioche',    name:'BRIOSCIA',          imballi:[112,52,26,'gross8','camp'],          pz_per_imballo:{112:112,52:52,26:26,gross8:80,camp:8},          unit:'imballi', color:'#d4a800', colorLight:'#fff8dc' },
+  { id:'brioche',    name:'BRIOSCIA',          imballi:[112,52,26,'gross8','camp'],                  pz_per_imballo:{112:112,52:52,26:26,gross8:80,camp:8},          unit:'imballi', color:'#d4a800', colorLight:'#fff8dc' },
   { id:'mini',       name:'MINI',              imballi:[112,52,26],           pz_per_imballo:{112:112,52:52,26:26},                  unit:'imballi', color:'#c0392b', colorLight:'#fde8e6' },
   { id:'paffutella', name:'PAFFUTELLA',        imballi:[26,52,112,20,40,80],  pz_per_imballo:{26:26,52:52,112:112,20:20,40:40,80:80}, unit:'imballi', color:'#1a7a4a', colorLight:'#e0f5ea',
     colorByImb:{26:'#2ecc71',52:'#2ecc71',112:'#2ecc71', 20:'#145a32',40:'#145a32',80:'#145a32'},
@@ -585,18 +586,18 @@ function fmtDateSimple(d){
 // BRIOCHE COUNTER
 // ══════════════════════════════════════════
 function updateBriocheCounter(){
-  const today = todayStr();
   const briocheP = PRODUCTS.find(p=>p.id==='brioche');
   if(!briocheP) return;
 
-  // Sum all brioche pz from ALL sessions where dataSped = today
+  // Usa la data della sessione corrente (quella visualizzata), non la data reale di oggi
+  const ses = getSession();
+  const targetDate = ses ? ses.date : '';
+
+  // Somma tutte le brioche di TUTTE le sessioni con la stessa data spedizione
   let ordinateOggi = 0;
-  Object.values(orders).forEach(ses=>{
-    (ses.rows||[]).forEach(row=>{
-      // check dataSped matches today (stored in session date or per-row dataLav? 
-      // We use the session date as the spedizione date
-      const sesDate = ses.date || '';
-      if(sesDate !== today) return;
+  Object.values(orders).forEach(s=>{
+    if((s.date||'') !== targetDate) return;
+    (s.rows||[]).forEach(row=>{
       briocheP.imballi.forEach(imb=>{
         const v = parseInt((row.qtys||{})[briocheP.id]?.[imb]||0);
         ordinateOggi += v * briocheP.pz_per_imballo[imb];
@@ -1268,6 +1269,10 @@ function renderProduzione(){
 
     // totali per cards
     const pzB  = calcPz('brioche',   rows);
+    // Calcoli separati per GR.8 e CAMP.
+    const carGross8 = rows.reduce((acc,row)=>acc + parseInt((row.qtys||{})['brioche']?.['gross8']||0), 0); // cartoni GR.8
+    const pzCamp    = rows.reduce((acc,row)=>acc + parseInt((row.qtys||{})['brioche']?.['camp']||0), 0);   // campionature dirette
+    const campTotale = (carGross8 * 8) + pzCamp;  // campionatura totale = GR8×8 + camp dirette
     const pzPa = calcPz('paffutella',rows);
     const pzMg = calcPz('mini',      rows);
     const pzM2 = pzMg/2;
@@ -1321,6 +1326,7 @@ function renderProduzione(){
       <div class="prod-mini-val" style="color:#7a5a9a;">${kgRomana}</div>
       <div class="prod-mini-sub">÷ 25</div>
     </div>`;
+
     if(palletBRT > 0) cards += `<div class="prod-mini-card" style="border:2px solid #c84b2f;">
       <div class="prod-mini-label" style="background:#c84b2f;">PALLET BRT</div>
       <div class="prod-mini-val" style="color:#c84b2f;">${palletBRT}</div>
@@ -1692,8 +1698,8 @@ function renderConfezionamento(){
 
   const byDate = {};
   Object.values(orders).forEach(ses=>{
-    const date = ses.date || '__senza_data__';
     (ses.rows||[]).forEach(row=>{
+      const date = row.dataLav || row.dataRic || ses.date || '__senza_data__';
       if(!byDate[date]) byDate[date]=[];
       byDate[date].push(row);
     });
@@ -1731,7 +1737,7 @@ function renderConfezionamento(){
     });
 
     // ── Totale imballi complessivi 112/52/26 (tutti i prodotti) ──
-    const imballiTot = {112:0, 52:0, 26:0};
+    const imballiTot = {112:0, 52:0, 26:0, gross8:0, camp:0};
     rows.forEach(row=>{
       PRODUCTS.forEach(p=>{
         p.imballi.forEach(imb=>{
@@ -1741,6 +1747,8 @@ function renderConfezionamento(){
         });
       });
     });
+    // Campionatura totale = GR.8 × 8 + campionature dirette
+    const campTotConf = (imballiTot.gross8 * 8) + imballiTot.camp;
 
     html += `<div class="prod-section print-section">
       <div class="prod-date-header">
@@ -1805,6 +1813,10 @@ function renderConfezionamento(){
         <td style="padding:6px 16px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot[52]}</td>
         <th style="background:#1a7a4a;color:#fff;padding:6px 16px;">DA 26</th>
         <td style="padding:6px 16px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot[26]}</td>
+        ${imballiTot.gross8>0?`<th style="background:#b87c1a;color:#fff;padding:6px 16px;">GR.8</th>
+        <td style="padding:6px 16px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot.gross8}</td>`:''}
+        ${campTotConf>0?`<th style="background:#8b4513;color:#fff;padding:6px 16px;">CAMP.</th>
+        <td style="padding:6px 16px;font-weight:700;font-size:16px;border:1px solid var(--line);">${campTotConf}</td>`:''}
       </tr>
     </table>`;
 
@@ -2070,7 +2082,11 @@ document.getElementById('btnRestore').addEventListener('change', function(e){
 });
 
 document.getElementById('btnNewSession').addEventListener('click', ()=>{
-  const date = document.getElementById('sessionDate').value || todayStr();
+  // Usa sempre la data di oggi come default per la nuova sessione
+  const today = todayStr();
+  const sessionDateEl = document.getElementById('sessionDate');
+  sessionDateEl.value = today; // imposta il campo data a oggi
+  const date = today;
   if(!confirm(`Avviare una nuova sessione per il ${fmtDateSimple(date)}?\nLa sessione corrente viene conservata.`)) return;
   currentSession = 'ses_'+date.replace(/-/g,'')+'_'+Math.random().toString(36).slice(2,6);
   orders[currentSession] = { date, rows:[] };
@@ -2100,7 +2116,21 @@ document.getElementById('btnDeleteSession').addEventListener('click', ()=>{
   renderSessionSelector();
   renderGrid();
   renderProduzione();
+  renderConfezionamento();
   notifyChange();
+});
+
+document.getElementById('btnDeleteEmptySessions').addEventListener('click', ()=>{
+  const vuote = Object.keys(orders).filter(k=> !(orders[k].rows||[]).length);
+  if(!vuote.length){ alert('Nessuna sessione vuota da eliminare.'); return; }
+  if(!confirm(`Eliminare ${vuote.length} sessioni vuote (0 clienti)?`)) return;
+  vuote.forEach(k=>{ if(k !== currentSession) delete orders[k]; });
+  renderSessionSelector();
+  renderGrid();
+  renderProduzione();
+  renderConfezionamento();
+  notifyChange();
+  flashMsg(`✓ ${vuote.length} sessioni vuote eliminate`);
 });
 
 document.getElementById('sessionDate').addEventListener('change', ()=>{
