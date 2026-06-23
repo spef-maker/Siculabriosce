@@ -2523,9 +2523,17 @@ document.getElementById('anagUpload').addEventListener('change', function(e){
 function getOperatori(){
   try{
     const saved = localStorage.getItem('operatori_lista');
-    if(saved) return JSON.parse(saved);
+    if(saved){
+      const list = JSON.parse(saved);
+      // Se contiene i vecchi nomi predefiniti, resetta
+      if(list.includes('Fabio') || list.includes('Collega 1')){
+        localStorage.removeItem('operatori_lista');
+      } else {
+        return list;
+      }
+    }
   } catch(e){}
-  return ['Fabio','Sara','Maria','Giulia','Anna'];
+  return ['Federica F.','Cafarella','Francesca','Erika','Angela'];
 }
 function saveOperatori(list){
   try{ localStorage.setItem('operatori_lista', JSON.stringify(list)); } catch(e){}
