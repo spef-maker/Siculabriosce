@@ -339,6 +339,7 @@ table.anag tr:hover td{background:#faf8f4;}
             style="padding:5px 7px;border:1px solid #d4a800;border-radius:4px;font-size:12px;background:#fff;">
         </label>
         <button class="btn" id="btnApplyDefaults" style="font-size:12px;padding:5px 10px;">↓ Applica a tutte le righe</button>
+        <button class="btn" id="btnAddPers" style="font-size:12px;padding:5px 10px;background:#4a2d6b;color:#fff;border-color:#4a2d6b;">+ Personalizzazione</button>
       </div>
     </div>
 
@@ -460,7 +461,7 @@ const firebaseConfig = {
 // ══════════════════════════════════════════
 // PRODOTTI + IMBALLI
 // ══════════════════════════════════════════
-const PERSONALIZZAZIONI = ["Francese","Spagnola","Tedesco","Inglese","Rumena","Polacco","Romana","120 Giorni","AntonioSabato","Anzile","AranciaDOOC","Australia","BaciSottozero","ConoArtic","DeltItalia","DolceVita","DonCannolo","DonGelato","Elios","EtnaFood","Fainello","FoodInSicily","Frisenda","GelatoSicily","GeloDOC","Gioventi","Gocce","GranitaDiBiancaFra","Ice&Co","Il Pane","IlPistacchio","InterFood","LaMadia","L'Uliveto","Maison Belli","MastroPistacchio","Mirtillo","Mister Mukka","Muno","Nonna Maria","Puro","Sabadi'","SanoSiciliano","Scalcione","Seminara","SiciliaGeneral","Sicilu","SicilyAddict","SigiGel","Soldano","Spa Amor Gelato","Tentazioni","VerySicily","Vucciri","Yo.Pi","Cartone Neutro"];
+let PERSONALIZZAZIONI = ["Francese","Spagnola","Tedesco","Inglese","Rumena","Polacco","Romana","Cartone Neutro","120 Giorni","AntonioSabato","Anzile","AranciaDOOC","Australia","BaciSottozero","ConoArtic","DeltItalia","DolceVita","DonCannolo","DonGelato","Elios","EtnaFood","Fainello","FoodInSicily","Frisenda","GelatoSicily","GeloDOC","Gioventi","Gocce","GranitaDiBiancaFra","Ice&Co","Il Pane","IlPistacchio","InterFood","LaMadia","L'Uliveto","Maison Belli","MastroPistacchio","Mirtillo","Mister Mukka","Muno","Nonna Maria","Puro","Sabadi'","SanoSiciliano","Scalcione","Seminara","SiciliaGeneral","Sicilu","SicilyAddict","SigiGel","Soldano","Spa Amor Gelato","Tentazioni","VerySicily","Vucciri","Yo.Pi"];
 const IMBALLO_LABELS = { gross8:'GR.8', camp:'CAMP.', pz:'PZ' };
 function imbLabel(imb){ return IMBALLO_LABELS[imb] || imb; }
 
@@ -1754,13 +1755,21 @@ function renderConfezionamento(){
       byLabel[sc.etichetta].rows.push(row);
     });
 
-    // ── Totale imballi complessivi 112/52/26 (tutti i prodotti) ──
-    const imballiTot = {112:0, 52:0, 26:0, gross8:0, camp:0};
+    // ── Totale imballi: standard/estero vs neutri (con personalizzazione) ──
+    const imballiTot    = {112:0, 52:0, 26:0, gross8:0, camp:0};
+    const imballiNeutri = {112:0, 52:0, 26:0};
     rows.forEach(row=>{
+      const persLower = (row.pers||''). toLowerCase().trim();
+      const isEstero = ESTERO_PERS.includes(persLower);
+      const hasPers = row.pers && row.pers.trim() && !isEstero;
       PRODUCTS.forEach(p=>{
         p.imballi.forEach(imb=>{
-          if(imballiTot.hasOwnProperty(imb)){
-            imballiTot[imb] += parseInt((row.qtys||{})[p.id]?.[imb]||0);
+          const v = parseInt((row.qtys||{})[p.id]?.[imb]||0);
+          if(v === 0) return;
+          if(hasPers && (imb===112||imb===52||imb===26)){
+            imballiNeutri[imb] += v;
+          } else if(imballiTot.hasOwnProperty(imb)){
+            imballiTot[imb] += v;
           }
         });
       });
@@ -1824,18 +1833,29 @@ function renderConfezionamento(){
       <span style="font-family:Georgia,serif;font-size:15px;color:var(--muted);">Imballi totali da preparare:</span>
     </div>
     <table class="print-table" style="border-collapse:collapse;font-size:13px;margin-bottom:24px;">
-      <tr>
-        <th style="background:#c84b2f;color:#fff;padding:6px 16px;">DA 112</th>
-        <td style="padding:6px 16px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot[112]}</td>
-        <th style="background:#2d5fa8;color:#fff;padding:6px 16px;">DA 52</th>
-        <td style="padding:6px 16px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot[52]}</td>
-        <th style="background:#1a7a4a;color:#fff;padding:6px 16px;">DA 26</th>
-        <td style="padding:6px 16px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot[26]}</td>
-        ${imballiTot.gross8>0?`<th style="background:#b87c1a;color:#fff;padding:6px 16px;">GR.8</th>
-        <td style="padding:6px 16px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot.gross8}</td>`:''}
-        ${campTotConf>0?`<th style="background:#8b4513;color:#fff;padding:6px 16px;">CAMP.</th>
-        <td style="padding:6px 16px;font-weight:700;font-size:16px;border:1px solid var(--line);">${campTotConf}</td>`:''}
-      </tr>
+      <thead><tr>
+        <th colspan="6" style="background:#333;color:#fff;padding:5px 10px;text-align:left;font-size:11px;">IMBALLI STANDARD (senza personalizzazione / estero)</th>
+        <th colspan="6" style="background:#5a3a7a;color:#fff;padding:5px 10px;text-align:left;font-size:11px;">IMBALLI NEUTRI (con personalizzazione)</th>
+        ${imballiTot.gross8>0||campTotConf>0?`<th colspan="${(imballiTot.gross8>0?2:0)+(campTotConf>0?2:0)}" style="background:#8b4513;color:#fff;padding:5px 10px;text-align:left;font-size:11px;">CAMPIONATURA</th>`:''}
+      </tr></thead>
+      <tbody><tr>
+        <th style="background:#c84b2f;color:#fff;padding:6px 14px;">112</th>
+        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot[112]}</td>
+        <th style="background:#2d5fa8;color:#fff;padding:6px 14px;">52</th>
+        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot[52]}</td>
+        <th style="background:#1a7a4a;color:#fff;padding:6px 14px;">26</th>
+        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot[26]}</td>
+        <th style="background:#7a4a9a;color:#fff;padding:6px 14px;">112N</th>
+        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiNeutri[112]}</td>
+        <th style="background:#5a3a8a;color:#fff;padding:6px 14px;">52N</th>
+        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiNeutri[52]}</td>
+        <th style="background:#3a2a7a;color:#fff;padding:6px 14px;">26N</th>
+        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiNeutri[26]}</td>
+        ${imballiTot.gross8>0?`<th style="background:#b87c1a;color:#fff;padding:6px 14px;">GR.8</th>
+        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot.gross8}</td>`:''}
+        ${campTotConf>0?`<th style="background:#8b4513;color:#fff;padding:6px 14px;">CAMP.</th>
+        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${campTotConf}</td>`:''}
+      </tr></tbody>
     </table>`;
 
     // ── Dettaglio clienti per etichetta (sotto, collassabile visivamente con indentazione) ──
@@ -2344,6 +2364,31 @@ document.getElementById('btnCancelAdd').addEventListener('click', ()=>{
 });
 
 document.getElementById('briocheTotale').addEventListener('input', ()=>updateBriocheCounter());
+
+// Carica personalizzazioni salvate in localStorage
+try{
+  const saved = localStorage.getItem('pers_custom');
+  if(saved){
+    const extra = JSON.parse(saved);
+    extra.forEach(p=>{ if(!PERSONALIZZAZIONI.includes(p)) PERSONALIZZAZIONI.push(p); });
+  }
+} catch(e){}
+
+document.getElementById('btnAddPers').addEventListener('click', ()=>{
+  const nome = prompt('Nome nuova personalizzazione:');
+  if(!nome || !nome.trim()) return;
+  const trimmed = nome.trim();
+  if(PERSONALIZZAZIONI.includes(trimmed)){ alert('Esiste già.'); return; }
+  PERSONALIZZAZIONI.push(trimmed);
+  PERSONALIZZAZIONI.sort((a,b)=>a.localeCompare(b));
+  // Salva in localStorage
+  try{
+    const base = ["Francese","Spagnola","Tedesco","Inglese","Rumena","Polacco","Romana","Cartone Neutro","120 Giorni","AntonioSabato","Anzile","AranciaDOOC","Australia","BaciSottozero","ConoArtic","DeltItalia","DolceVita","DonCannolo","DonGelato","Elios","EtnaFood","Fainello","FoodInSicily","Frisenda","GelatoSicily","GeloDOC","Gioventi","Gocce","GranitaDiBiancaFra","Ice&Co","Il Pane","IlPistacchio","InterFood","LaMadia","L'Uliveto","Maison Belli","MastroPistacchio","Mirtillo","Mister Mukka","Muno","Nonna Maria","Puro","Sabadi'","SanoSiciliano","Scalcione","Seminara","SiciliaGeneral","Sicilu","SicilyAddict","SigiGel","Soldano","Spa Amor Gelato","Tentazioni","VerySicily","Vucciri","Yo.Pi"];
+    const extras = PERSONALIZZAZIONI.filter(p=>!base.includes(p));
+    localStorage.setItem('pers_custom', JSON.stringify(extras));
+  } catch(e){}
+  flashMsg(`✓ "${trimmed}" aggiunta alle personalizzazioni`);
+});
 
 document.getElementById('btnApplyDefaults').addEventListener('click', ()=>{
   const lotto   = document.getElementById('defaultLotto').value.trim();
