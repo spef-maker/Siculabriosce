@@ -288,6 +288,7 @@ table.anag tr:hover td{background:#faf8f4;}
       </select>
       <button class="btn" id="btnDeleteSession" title="Elimina sessione corrente" style="color:var(--accent);">🗑 Elimina sessione</button>
       <button class="btn" id="btnDeleteEmptySessions" title="Elimina tutte le sessioni senza clienti" style="color:#888;">🗑 Elimina sessioni vuote</button>
+      <button class="btn" id="btnPurgeByDate" title="Elimina sessioni per intervallo di date" style="color:#c0392b;">🧹 Pulizia per data</button>
       <button class="btn" id="btnExportPdf">Esporta PDF</button>
       <button class="btn" id="btnBackup">💾 Backup JSON</button>
       <label class="btn" for="btnRestore" style="cursor:pointer;">📂 Ripristina JSON</label>
@@ -2159,6 +2160,88 @@ document.getElementById('btnDeleteEmptySessions').addEventListener('click', ()=>
   renderConfezionamento();
   notifyChange();
   flashMsg(`✓ ${vuote.length} sessioni vuote eliminate`);
+});
+
+document.getElementById('btnPurgeByDate').addEventListener('click', ()=>{
+  // Mostra un dialog per scegliere l'intervallo di date
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  dialog.innerHTML = `
+    <div style="background:#fff;border-radius:8px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+      <h3 style="margin:0 0 6px;font-family:Georgia,serif;font-size:18px;">🧹 Pulizia sessioni per data</h3>
+      <p style="margin:0 0 18px;font-size:13px;color:#666;">Elimina definitivamente tutte le sessioni (con o senza clienti) nel periodo indicato. <strong>L'operazione è irreversibile.</strong></p>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+        <label style="font-size:12px;color:#888;min-width:40px;">Dal</label>
+        <input type="date" id="purgeFrom" style="flex:1;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;">
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;">
+        <label style="font-size:12px;color:#888;min-width:40px;">Al</label>
+        <input type="date" id="purgeTo" style="flex:1;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;">
+      </div>
+      <div id="purgePreview" style="font-size:12px;color:#c0392b;margin-bottom:16px;min-height:18px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button id="purgeCancelBtn" style="padding:8px 18px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:13px;">Annulla</button>
+        <button id="purgeConfirmBtn" style="padding:8px 18px;border:none;border-radius:4px;background:#c0392b;color:#fff;cursor:pointer;font-size:13px;font-weight:700;">Elimina definitivamente</button>
+      </div>
+    </div>`;
+  document.body.appendChild(dialog);
+
+  const fromEl = dialog.querySelector('#purgeFrom');
+  const toEl   = dialog.querySelector('#purgeTo');
+  const preview = dialog.querySelector('#purgePreview');
+
+  // Pre-imposta date con il range delle sessioni esistenti
+  const dates = Object.values(orders).map(s=>s.date).filter(Boolean).sort();
+  if(dates.length){ fromEl.value = dates[0]; toEl.value = dates[dates.length-1]; }
+
+  function updatePreview(){
+    const from = fromEl.value, to = toEl.value;
+    if(!from || !to){ preview.textContent = ''; return; }
+    const toDelete = Object.keys(orders).filter(k=>{
+      const d = orders[k].date || '';
+      return d >= from && d <= to && k !== currentSession;
+    });
+    const conClienti = toDelete.filter(k=>(orders[k].rows||[]).length > 0).length;
+    const vuote = toDelete.length - conClienti;
+    preview.textContent = toDelete.length === 0
+      ? 'Nessuna sessione trovata in questo periodo.'
+      : `Verranno eliminate ${toDelete.length} sessioni (${conClienti} con clienti, ${vuote} vuote).`;
+  }
+
+  fromEl.addEventListener('change', updatePreview);
+  toEl.addEventListener('change', updatePreview);
+  updatePreview();
+
+  dialog.querySelector('#purgeCancelBtn').addEventListener('click', ()=> dialog.remove());
+
+  dialog.querySelector('#purgeConfirmBtn').addEventListener('click', ()=>{
+    const from = fromEl.value, to = toEl.value;
+    if(!from || !to){ alert('Inserisci entrambe le date.'); return; }
+    const toDelete = Object.keys(orders).filter(k=>{
+      const d = orders[k].date || '';
+      return d >= from && d <= to && k !== currentSession;
+    });
+    if(!toDelete.length){ alert('Nessuna sessione trovata.'); dialog.remove(); return; }
+    toDelete.forEach(k=> delete orders[k]);
+    saveLocal();
+    // Salva su Firebase per propagare la pulizia a tutti
+    if(db){
+      setSyncStatus('saving','Pulizia in corso…');
+      db.ref('ordini_siculabrioche/v1').set({orders, clients})
+        .then(()=>{ setSyncStatus('ok','Pulizia completata ✓'); })
+        .catch(()=>setSyncStatus('err','Errore salvataggio'));
+    }
+    ensureSession();
+    renderSessionSelector();
+    renderGrid();
+    renderProduzione();
+    renderConfezionamento();
+    dialog.remove();
+    flashMsg(`✓ ${toDelete.length} sessioni eliminate definitivamente`);
+  });
+
+  // Chiudi cliccando fuori
+  dialog.addEventListener('click', e=>{ if(e.target===dialog) dialog.remove(); });
 });
 
 document.getElementById('sessionDate').addEventListener('change', ()=>{
