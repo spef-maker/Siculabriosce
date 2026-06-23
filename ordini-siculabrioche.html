@@ -1965,6 +1965,13 @@ function initFirebase(){
           if(data.orders) orders = data.orders;
           saveLocal();
           setTimeout(()=>{ isRemoteUpdate=false; }, 0);
+          // Pulisci sessioni vuote e risalva su Firebase
+          const vuotePrima = Object.keys(orders).filter(k=>!(orders[k].rows||[]).length && k!==currentSession);
+          if(vuotePrima.length){
+            vuotePrima.forEach(k=>delete orders[k]);
+            saveLocal();
+            db.ref('ordini_siculabrioche/v1').set({orders, clients}).catch(()=>{});
+          }
         } else {
           // Firebase vuoto → carica i dati locali
           const hasLocalData = Object.keys(orders).length > 0 || clients.length > 0;
@@ -1981,6 +1988,9 @@ function initFirebase(){
         if(data){
           if(data.clients && Array.isArray(data.clients)) clients = data.clients;
           if(data.orders) orders = data.orders;
+          // Pulisci anche gli aggiornamenti in arrivo
+          const vuote = Object.keys(orders).filter(k=>!(orders[k].rows||[]).length && k!==currentSession);
+          vuote.forEach(k=>delete orders[k]);
           saveLocal();
         }
         setTimeout(()=>{ isRemoteUpdate=false; }, 0);
