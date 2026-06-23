@@ -526,6 +526,23 @@ function setSyncStatus(cls,msg){
 // ══════════════════════════════════════════
 // SESSION MANAGEMENT
 // ══════════════════════════════════════════
+function cleanEmptySessions(){
+  // Elimina automaticamente tutte le sessioni con 0 clienti tranne quella corrente
+  let changed = false;
+  Object.keys(orders).forEach(k=>{
+    if(k === currentSession) return; // non eliminare mai quella attiva
+    if(!(orders[k].rows||[]).length){
+      delete orders[k];
+      changed = true;
+    }
+  });
+  if(changed){
+    renderSessionSelector();
+    renderProduzione();
+    renderConfezionamento();
+  }
+}
+
 function ensureSession(){
   if(currentSession && orders[currentSession]) return;
   const date = document.getElementById('sessionDate').value || todayStr();
@@ -1909,6 +1926,7 @@ function initFirebase(){
 
     notifyChange = ()=>{
       if(isRemoteUpdate) return;
+      cleanEmptySessions();
       saveLocal();
       setSyncStatus('saving','Salvataggio…');
       if(saveDebounce) clearTimeout(saveDebounce);
@@ -2013,7 +2031,7 @@ function initFirebase(){
 }
 
 function fallbackInit(){
-  notifyChange = ()=>{ saveLocal(); setSyncStatus('ok','Salvato localmente ✓'); };
+  notifyChange = ()=>{ cleanEmptySessions(); saveLocal(); setSyncStatus('ok','Salvato localmente ✓'); };
   loadLocal();
   ensureSession();
   renderSessionSelector();
@@ -2300,6 +2318,7 @@ document.getElementById('anagUpload').addEventListener('change', function(e){
 
 // ── Init ──
 loadLocal(); // carica dati locali subito (evita schermata vuota)
+cleanEmptySessions();
 ensureSession();
 renderSessionSelector();
 renderGrid();
