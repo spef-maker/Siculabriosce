@@ -67,6 +67,7 @@ table.grid td{
   vertical-align:middle;white-space:nowrap;text-align:center;
 }
 table.grid tr:hover td{background:#faf8f4;}
+table.grid tr.row-hidden{display:none !important;}
 table.grid .client-cell{min-width:220px;font-weight:600;position:sticky;left:0;background:#fff;z-index:5;border-right:2px solid var(--line-strong);}
 table.grid tr:hover .client-cell{background:#faf8f4;}
 /* cod-cell removed - merged into client-cell */
@@ -825,9 +826,10 @@ function renderGrid(){
     const hasPers = row.pers && row.pers.trim();
     const rowBg = row.rowColor || (hasPers ? '#fffde6' : '');
     const rowHidden = gridFilterDate && (row.dataLav||row.dataRic||'') !== gridFilterDate;
-    const trStyle = [rowBg?'background:'+rowBg:'', rowHidden?'display:none':''].filter(Boolean).join(';');
-    return `<tr data-ri="${ri}" ${trStyle?'style="'+trStyle+'"':''}>
-      <td class="client-cell" ${rowBg?'style="background:'+rowBg+';"':''}>
+    const trStyle = rowBg ? `style="background:${rowBg}"` : '';
+    const clientCellStyle = rowBg ? `style="background:${rowBg};"` : '';
+    return `<tr data-ri="${ri}" class="${rowHidden?'row-hidden':''}" ${trStyle}>
+      <td class="client-cell" ${clientCellStyle}>
         <div style="display:flex;align-items:center;gap:4px;">
           <button class="color-pick-btn" data-ri="${ri}" title="Colore riga" style="width:14px;height:14px;border-radius:50%;border:2px solid #ccc;background:${rowBg||'#fff'};cursor:pointer;padding:0;flex-shrink:0;"></button>
           <div style="flex:1;min-width:0;">
