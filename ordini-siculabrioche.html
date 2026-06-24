@@ -493,6 +493,11 @@ const PRODUCTS = [
   { id:'minipaf',    name:'MINI PAFFUTELLE',     imballi:[112],                 pz_per_imballo:{112:112},                             unit:'imballi', color:'#27a060', colorLight:'#d0f0e0' },
   { id:'babybrioche',name:'BABY BRIOSCE',        imballi:[112],                 pz_per_imballo:{112:112},                             unit:'imballi', color:'#e06030', colorLight:'#fde0d0' },
   { id:'babypaf',    name:'BABY PAFFUTELLE',     imballi:[112],                 pz_per_imballo:{112:112},                             unit:'imballi', color:'#208050', colorLight:'#c8ecd8' },
+  { id:'sablu_brioche', name:'BRIOSCIA pz',      imballi:['pz'],                pz_per_imballo:{pz:1},                                unit:'pz',      color:'#d4a800', colorLight:'#fff8dc' },
+  { id:'sablu_mini',    name:'MINI pz',           imballi:['pz'],                pz_per_imballo:{pz:1},                                unit:'pz',      color:'#c0392b', colorLight:'#fde8e6' },
+  { id:'sablu_paf',     name:'PAFFUTELLA pz',     imballi:['pz'],                pz_per_imballo:{pz:1},                                unit:'pz',      color:'#1a7a4a', colorLight:'#d5f5e3' },
+  { id:'sablu_panzotta',name:'PANZOTTA pz',       imballi:['pz'],                pz_per_imballo:{pz:1},                                unit:'pz',      color:'#7e3bb5', colorLight:'#f0e5fa' },
+  { id:'sablu_choco',   name:'CHOCO pz',          imballi:['pz'],                pz_per_imballo:{pz:1},                                unit:'pz',      color:'#6b3a1f', colorLight:'#f5ece6' },
   { id:'lat_mandorla',  name:'LAT. MANDORLA',   imballi:['pz'], pz_per_imballo:{pz:1}, unit:'pz', color:'#1565a8', colorLight:'#e3edf8' },
   { id:'lat_pistacchio',name:'LAT. PISTACCHIO',  imballi:['pz'], pz_per_imballo:{pz:1}, unit:'pz', color:'#1a6b2a', colorLight:'#d4eadc' },
   { id:'lat_caffe',     name:'LAT. CAFFÈ',       imballi:['pz'], pz_per_imballo:{pz:1}, unit:'pz', color:'#5a3010', colorLight:'#ede0d4' },
@@ -1366,12 +1371,18 @@ function renderProduzione(){
     const pzMiniPaf = calcPz('minipaf',  rows);
     const pzBabyB = calcPz('babybrioche',rows);
     const pzBabyP = calcPz('babypaf',   rows);
+    // SABLU pz singoli
+    const pzSabluB  = calcPz('sablu_brioche', rows);
+    const pzSabluM  = calcPz('sablu_mini',    rows);
+    const pzSabluPa = calcPz('sablu_paf',     rows);
+    const pzSabluPz = calcPz('sablu_panzotta',rows);
+    const pzSabluCh = calcPz('sablu_choco',   rows);
     const pzPz = calcPz('panzotta',  rows);
     const pzMa = calcPz('mandorla',  rows);
     const pzLa = calcPz('lattante',  rows);
 
     // Pallet per corriere (escluse paste mandorla e lattante, diviso 52, arrotondato per eccesso)
-    const EXCLUDED_FROM_PALLET = ['lat_mandorla','lat_pistacchio','lat_caffe','lat_nocciola','pura_pistacchio','pura_mandorla','pura_nocciola'];
+    const EXCLUDED_FROM_PALLET = ['lat_mandorla','lat_pistacchio','lat_caffe','lat_nocciola','pura_pistacchio','pura_mandorla','pura_nocciola','sablu_brioche','sablu_mini','sablu_paf','sablu_panzotta','sablu_choco'];
     function calcPzForCorriere(corriere, rowSet){
       return rowSet
         .filter(r=> corriere ? r.corriere===corriere : true)
@@ -1387,7 +1398,7 @@ function renderProduzione(){
     const palletBRT = pzBRT > 0 ? Math.ceil(pzBRT / 52 / 24) : 0;
     const palletGLS = pzGLS > 0 ? Math.ceil(pzGLS / 52 / 24) : 0;
     // IMPASTATRICE = Brioche + Paffutella + Mini÷2 + Grosse + MiniPaf + BabyBrioche + BabyPaf
-    const totImp = pzB + pzPa + pzM2 + pzGrosse + pzMiniPaf + pzBabyB + pzBabyP;
+    const totImp = pzB + pzPa + pzM2 + pzGrosse + pzMiniPaf + pzBabyB + pzBabyP + pzSabluB + Math.floor(pzSabluM/2) + pzSabluPa;
     const kgBrioche = Math.ceil(totImp / 25 / 5) * 5;
     const totRomana = pzRo;
     const kgRomana = Math.ceil(pzRo / 25 / 5) * 5;
@@ -1397,7 +1408,7 @@ function renderProduzione(){
     cards += `<div class="prod-mini-card" style="border:2px solid var(--accent);">
       <div class="prod-mini-label" style="background:var(--accent);">IMPASTATRICE</div>
       <div class="prod-mini-val" style="color:var(--accent);">${fmtN(totImp)}</div>
-      <div class="prod-mini-sub">B:${pzB} Pa:${pzPa} M÷2:${fmtN(pzM2)} Gr:${pzGrosse} MP:${pzMiniPaf} BB:${pzBabyB} BP:${pzBabyP}</div>
+      <div class="prod-mini-sub">B:${pzB} Pa:${pzPa} M÷2:${fmtN(pzM2)} Gr:${pzGrosse} MP:${pzMiniPaf} BB:${pzBabyB} BP:${pzBabyP}${pzSabluB||pzSabluM||pzSabluPa?' SBL:'+( pzSabluB+pzSabluM+pzSabluPa):''}</div>
     </div>`;
     cards += `<div class="prod-mini-card" style="border:2px solid #5a7a9a;">
       <div class="prod-mini-label" style="background:#5a7a9a;">KG BRIOSCE</div>
@@ -1429,6 +1440,9 @@ function renderProduzione(){
      {id:'romana',l:'ROMANA',c:'#b5451b'},{id:'romanachoco',l:'ROMANA CH.',c:'#7a2e10'},
      {id:'grosse48',l:'GROSSE 105g',c:'#b87c1a'},{id:'minipaf',l:'MINI PAF.',c:'#27a060'},
      {id:'babybrioche',l:'BABY BRIOC.',c:'#e06030'},{id:'babypaf',l:'BABY PAF.',c:'#208050'},
+     {id:'sablu_brioche',l:'SABLU B.',c:'#d4a800'},{id:'sablu_mini',l:'SABLU M.',c:'#c0392b'},
+     {id:'sablu_paf',l:'SABLU Pa.',c:'#1a7a4a'},{id:'sablu_panzotta',l:'SABLU Pz.',c:'#7e3bb5'},
+     {id:'sablu_choco',l:'SABLU Ch.',c:'#6b3a1f'},
      {id:'panzotta',l:'PANZOTTA',c:'#7e3bb5'},
      {id:'lat_mandorla',l:'LAT.MAND.',c:'#1565a8'},{id:'lat_pistacchio',l:'LAT.PIST.',c:'#1a6b2a'},
      {id:'lat_caffe',l:'LAT.CAFFÈ',c:'#5a3010'},{id:'lat_nocciola',l:'LAT.NOCC.',c:'#8b5e2a'},
@@ -1460,12 +1474,12 @@ function renderProduzione(){
         <th style="background:#d4a800;color:#fff;">BRIOSCIA</th><td>${pzB}</td>
         <th style="background:#1a7a4a;color:#fff;">PAFFUTELLA</th><td>${pzPa}</td>
         <th style="background:#c0392b;color:#fff;">MINI ÷2</th><td>${fmtN(pzM2)}</td>
-        <th style="background:#6b3a1f;color:#fff;">CHOCO</th><td>${pzCh}</td>
+        <th style="background:#6b3a1f;color:#fff;">CHOCO</th><td>${pzCh + pzSabluCh}</td>
         <th style="background:#b87c1a;color:#fff;">GROSSE</th><td>${pzGrosse}</td>
         <th style="background:#27a060;color:#fff;">MINI PAF</th><td>${pzMiniPaf}</td>
         <th style="background:#e06030;color:#fff;">BABY BR.</th><td>${pzBabyB}</td>
         <th style="background:#208050;color:#fff;">BABY PAF</th><td>${pzBabyP}</td>
-        <th style="background:#7e3bb5;color:#fff;">PANZOTTA</th><td>${pzPz}</td>
+        <th style="background:#7e3bb5;color:#fff;">PANZOTTA</th><td>${pzPz + pzSabluPz}</td>
       </tr></table>
     </div>`;
 
@@ -1757,6 +1771,10 @@ function calcScadenza(row){
   }
 
   if(row.pers && row.pers.trim()){
+    // Se la personalizzazione contiene "120" giorni → shelf life 120
+    if(persLower === '120 giorni' || persLower.includes('120 gg') || persLower.includes('120giorni')){
+      return { etichetta: row.pers, giorni: 120 };
+    }
     return { etichetta: row.pers, giorni: 90 };
   }
 
