@@ -295,10 +295,8 @@ table.anag tr:hover td{background:#faf8f4;}
       <label class="btn" for="btnRestore" style="cursor:pointer;">📂 Ripristina JSON</label>
       <input type="file" id="btnRestore" accept=".json" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;">
       <span style="flex:1"></span>
-      <label style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
-        Data spedizione:
-        <input type="date" id="sessionDate" style="padding:6px 8px;border:1px solid var(--line-strong);border-radius:var(--radius);font-size:13px;">
-      </label>
+      <!-- sessionDate nascosto ma ancora usato internamente -->
+      <input type="date" id="sessionDate" style="display:none;">
     </div>
     <!-- Barra operatore e filtro data lavorazione -->
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:7px 14px;background:#f5f5f5;border-bottom:1px solid var(--line);font-size:13px;">
@@ -475,7 +473,7 @@ const firebaseConfig = {
 // ══════════════════════════════════════════
 // PRODOTTI + IMBALLI
 // ══════════════════════════════════════════
-let PERSONALIZZAZIONI = ["Francese","Spagnola","Tedesco","Inglese","Rumena","Polacco","Romana","Cartone Neutro","120 Giorni","AntonioSabato","Anzile","AranciaDOOC","Australia","BaciSottozero","ConoArtic","DeltItalia","DolceVita","DonCannolo","DonGelato","Elios","EtnaFood","Fainello","FoodInSicily","Frisenda","GelatoSicily","GeloDOC","Gioventi","Gocce","GranitaDiBiancaFra","Ice&Co","Il Pane","IlPistacchio","InterFood","LaMadia","L'Uliveto","Maison Belli","MastroPistacchio","Mirtillo","Mister Mukka","Muno","Nonna Maria","Puro","Sabadi'","SanoSiciliano","Scalcione","Seminara","SiciliaGeneral","Sicilu","SicilyAddict","SigiGel","Soldano","Spa Amor Gelato","Tentazioni","VerySicily","Vucciri","Yo.Pi"];
+let PERSONALIZZAZIONI = ["Francese","Spagnola","Tedesco","Inglese","Rumena","Polacco","Romana","Cartone Neutro","Briosce chiare","120 Giorni","AntonioSabato","Anzile","AranciaDOOC","Australia","BaciSottozero","ConoArtic","DeltItalia","DolceVita","DonCannolo","DonGelato","Elios","EtnaFood","Fainello","FoodInSicily","Frisenda","GelatoSicily","GeloDOC","Gioventi","Gocce","GranitaDiBiancaFra","Ice&Co","Il Pane","IlPistacchio","InterFood","LaMadia","L'Uliveto","Maison Belli","MastroPistacchio","Mirtillo","Mister Mukka","Muno","Nonna Maria","Puro","Sabadi'","SanoSiciliano","Scalcione","Seminara","SiciliaGeneral","Sicilu","SicilyAddict","SigiGel","Soldano","Spa Amor Gelato","Tentazioni","VerySicily","Vucciri","Yo.Pi"];
 const IMBALLO_LABELS = { gross8:'GR.8', camp:'CAMP.', pz:'PZ' };
 function imbLabel(imb){ return IMBALLO_LABELS[imb] || imb; }
 
@@ -784,6 +782,8 @@ function renderGrid(){
     <th rowspan="2" style="min-width:150px;background:#2d4a6b;">NOTE</th>
     <th rowspan="2" style="min-width:160px;background:#4a2d6b;">PERSONALIZZAZIONE</th>
     <th rowspan="2" style="min-width:80px;background:#2d4a2d;font-size:10px;">INSERITO DA</th>
+    <th rowspan="2" style="min-width:140px;background:#5a4a2d;font-size:10px;">DESC. AGGIUNTIVA</th>
+    <th rowspan="2" style="min-width:70px;background:#5a4a2d;font-size:10px;">SHELF gg</th>
     <th class="tot-header" rowspan="2">TOT PZ</th>
     <th class="diff-header" rowspan="2">DA PROD./VENDERE</th>
     <th rowspan="2"></th></tr>`;
@@ -868,6 +868,14 @@ function renderGrid(){
           style="width:155px;border:1px solid var(--line);border-radius:3px;padding:3px 6px;font-size:12px;background:transparent;">
       </td>
       <td style="min-width:80px;background:#e8f0e8;text-align:center;font-family:var(--mono);font-size:11px;color:#2d4a2d;font-weight:600;">${esc(row.operatore||'')}</td>
+      <td style="min-width:140px;background:#f5f0e8;position:relative;">
+        <input type="text" class="meta-input" data-ri="${ri}" data-field="descExtra" value="${esc(row.descExtra||'')}" placeholder="es. Panzotta…" maxlength="60"
+          style="width:135px;border:1px solid var(--line);border-radius:3px;padding:3px 6px;font-size:11px;background:transparent;">
+      </td>
+      <td style="min-width:70px;background:#f5f0e8;">
+        <input type="number" class="meta-input" data-ri="${ri}" data-field="shelfExtra" value="${esc(row.shelfExtra||'')}" placeholder="gg" min="1" max="999"
+          style="width:60px;border:1px solid var(--line);border-radius:3px;padding:3px 6px;font-size:11px;background:transparent;text-align:center;">
+      </td>
       <td class="tot-cell" id="rtot-${ri}">${rowPz||''}</td>
       <td class="${rowPz>0?'diff-pos':'diff-zero'}" id="diff-${ri}">${rowPz||''}</td>
       <td><button class="btn sm" onclick="removeRow(${ri})" title="Elimina riga">🗑</button></td>
@@ -893,7 +901,7 @@ function renderGrid(){
       <tr class="grid-footer">
         <td class="client-cell">TOTALE ORDINI</td>
         ${footCells}
-        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         <td id="grand-total">${totalPz||''}</td>
         <td class="${diffClass}" id="grand-diff">${diffTxt}</td>
         <td></td>
@@ -1232,7 +1240,7 @@ document.getElementById('btnConfirmAdd').addEventListener('click', ()=>{
 
   ses.rows.push({ id:uid(), clientCod:client.cod||'', clientNome:client.nome, qtys:{},
     lotto: defLotto, dataRic: defDataRic, dataLav: defDataLav, corriere:'', note:'', pers:'',
-    operatore: currentOperator, rowColor:'' });
+    operatore: currentOperator, rowColor:'', descExtra:'', shelfExtra:'' });
   document.getElementById('acInput').value='';
   selectedClient = null;
   acItems = [];
@@ -1751,34 +1759,46 @@ function renderStorico(clientCod, clientNome){
 const ESTERO_PERS = ['francese','spagnola','tedesco','inglese','rumena','polacco'];
 
 function calcScadenza(row){
-  // Ritorna { etichetta, giorni }
+  // Ritorna array di { etichetta, giorni } — può essere più di uno (es. personalizzazione + desc aggiuntiva)
   const persLower = (row.pers||'').toLowerCase().trim();
+  const results = [];
 
+  // 1. Estero → 120gg
   if(ESTERO_PERS.includes(persLower)){
-    return { etichetta: row.pers, giorni: 120 };
+    results.push({ etichetta: row.pers, giorni: 120 });
+  }
+  // 2. Romana Cioccolato → 45gg
+  else if((row.qtys||{})['romanachoco'] && Object.values(row.qtys.romanachoco).some(v=>parseInt(v||0)>0)){
+    results.push({ etichetta: 'LA ROMANA CIOCCOLATO', giorni: 45 });
+  }
+  // 3. Romana classica → 90gg
+  else if((row.qtys||{})['romana'] && Object.values(row.qtys.romana).some(v=>parseInt(v||0)>0)){
+    results.push({ etichetta: 'LA ROMANA', giorni: 90 });
+  }
+  // 4. Briosce chiare → 90gg con etichetta specifica
+  else if(persLower === 'briosce chiare'){
+    results.push({ etichetta: 'BRIOSCE CHIARE', giorni: 90 });
+  }
+  // 5. 120 Giorni → 120gg
+  else if(persLower === '120 giorni' || persLower.includes('120 gg')){
+    results.push({ etichetta: row.pers, giorni: 120 });
+  }
+  // 6. Altra personalizzazione → 90gg
+  else if(row.pers && row.pers.trim()){
+    results.push({ etichetta: row.pers, giorni: 90 });
+  }
+  // 7. Standard → 90gg
+  else {
+    results.push({ etichetta: 'SICULABRIOSCE STANDARD', giorni: 90 });
   }
 
-  const hasRomanaChoco = (row.qtys||{})['romanachoco'] &&
-    Object.values(row.qtys.romanachoco).some(v=>parseInt(v||0)>0);
-  if(hasRomanaChoco){
-    return { etichetta: 'LA ROMANA CIOCCOLATO', giorni: 45 };
+  // 8. Descrizione aggiuntiva con shelf life personalizzata
+  if(row.descExtra && row.descExtra.trim()){
+    const giorni = parseInt(row.shelfExtra||0) || 90;
+    results.push({ etichetta: row.descExtra, giorni });
   }
 
-  const hasRomana = (row.qtys||{})['romana'] &&
-    Object.values(row.qtys.romana).some(v=>parseInt(v||0)>0);
-  if(hasRomana){
-    return { etichetta: 'LA ROMANA', giorni: 90 };
-  }
-
-  if(row.pers && row.pers.trim()){
-    // Se la personalizzazione contiene "120" giorni → shelf life 120
-    if(persLower === '120 giorni' || persLower.includes('120 gg') || persLower.includes('120giorni')){
-      return { etichetta: row.pers, giorni: 120 };
-    }
-    return { etichetta: row.pers, giorni: 90 };
-  }
-
-  return { etichetta: 'SICULABRIOSCE STANDARD', giorni: 90 };
+  return results; // ritorna array
 }
 
 function addDays(dateStr, days){
@@ -1832,9 +1852,11 @@ function renderConfezionamento(){
     // ── Raggruppa per etichetta (nazionalità/tipo) ──
     const byLabel = {};
     rows.forEach(row=>{
-      const sc = calcScadenza(row);
-      if(!byLabel[sc.etichetta]) byLabel[sc.etichetta] = { giorni: sc.giorni, rows: [] };
-      byLabel[sc.etichetta].rows.push(row);
+      const scs = calcScadenza(row);
+      scs.forEach(sc=>{
+        if(!byLabel[sc.etichetta]) byLabel[sc.etichetta] = { giorni: sc.giorni, rows: [] };
+        byLabel[sc.etichetta].rows.push(row);
+      });
     });
 
     // ── Totale imballi: standard/estero vs neutri (con personalizzazione) ──
