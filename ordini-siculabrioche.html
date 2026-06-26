@@ -1768,6 +1768,7 @@ function renderStorico(clientCod, clientNome){
 // Mappa shelf-life per personalizzazione (sovrascrive i default)
 const SHELF_LIFE_MAP = {
   'francese': 120, 'spagnola': 120, 'tedesco': 120, 'inglese': 120, 'rumena': 120, 'polacco': 120,
+  'romana mini': 60,
   'romana cioccolato': 45, 'la romana cioccolato': 45,
   'romana': 90, 'la romana': 90,
   '120 giorni': 120,
@@ -1825,6 +1826,11 @@ function calcScadenza(row){
   // 2. Romana Cioccolato → 45gg
   if(hasProd('romanachoco')){
     results.push({ etichetta: 'LA ROMANA CIOCCOLATO', giorni: 45 });
+  }
+
+  // 3. Romana Mini → 60gg, sempre cartone neutro 26
+  if(hasProd('romanamini')){
+    results.push({ etichetta: 'ROMANA MINI', giorni: 60 });
   }
 
   // 4. Romana classica → 90gg
