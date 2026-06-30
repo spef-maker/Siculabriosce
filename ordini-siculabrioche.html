@@ -1895,7 +1895,8 @@ function renderConfezionamento(){
   const byDate = {};
   Object.values(orders).forEach(ses=>{
     (ses.rows||[]).forEach(row=>{
-      const date = row.dataLav || row.dataRic || ses.date || '__senza_data__';
+      // La scadenza si calcola dalla DATA SPEDIZIONE (data sessione), non dalla data lavorazione
+      const date = ses.date || row.dataLav || row.dataRic || '__senza_data__';
       if(!byDate[date]) byDate[date]=[];
       byDate[date].push(row);
     });
