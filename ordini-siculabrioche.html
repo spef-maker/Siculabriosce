@@ -684,10 +684,7 @@ function checkRecentOrders(clientCod, clientNome){
   const sessionDate = ses.date || todayStr();
 
   // Calcola i 3 giorni precedenti alla data della sessione corrente
-  const refDate = new Date(sessionDate + 'T00:00:00');
-  const limitDate = new Date(refDate);
-  limitDate.setDate(limitDate.getDate() - 3);
-  const limitStr = limitDate.toISOString().slice(0,10);
+  const limitStr = addDays(sessionDate, -3);
 
   // Cerca in TUTTE le sessioni (esclusa quella corrente) nell'intervallo
   const found = [];
@@ -1876,10 +1873,15 @@ function calcScadenza(row){
 function addDays(dateStr, days){
   if(!dateStr || dateStr==='__senza_data__') return '';
   try{
-    const d = new Date(dateStr+'T00:00:00');
-    if(isNaN(d.getTime())) return '';
-    d.setDate(d.getDate()+days);
-    return d.toISOString().slice(0,10);
+    const [y, m, g] = dateStr.split('-').map(Number);
+    if(!y || !m || !g) return '';
+    // Usa Date.UTC per evitare problemi di fuso orario/ora legale
+    const ms = Date.UTC(y, m-1, g) + days * 86400000;
+    const d = new Date(ms);
+    const yy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth()+1).padStart(2,'0');
+    const dd = String(d.getUTCDate()).padStart(2,'0');
+    return `${yy}-${mm}-${dd}`;
   } catch(e){ return ''; }
 }
 
