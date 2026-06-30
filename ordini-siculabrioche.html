@@ -628,21 +628,33 @@ function updateBriocheCounter(){
   const briocheP = PRODUCTS.find(p=>p.id==='brioche');
   if(!briocheP) return;
 
-  // Usa la data della sessione corrente (quella visualizzata), non la data reale di oggi
   const ses = getSession();
-  const targetDate = ses ? ses.date : '';
+  if(!ses){ return; }
 
-  // Somma tutte le brioche di TUTTE le sessioni con la stessa data spedizione
-  let ordinateOggi = 0;
-  Object.values(orders).forEach(s=>{
-    if((s.date||'') !== targetDate) return;
-    (s.rows||[]).forEach(row=>{
+  function sumRows(rows){
+    let tot = 0;
+    (rows||[]).forEach(row=>{
       briocheP.imballi.forEach(imb=>{
         const v = parseInt((row.qtys||{})[briocheP.id]?.[imb]||0);
-        ordinateOggi += v * briocheP.pz_per_imballo[imb];
+        tot += v * briocheP.pz_per_imballo[imb];
       });
+      // Solo Brioscia pz SABLU nel contatore — Mini e Paffutella solo nei KG impastatrice
+      const sabluB = parseInt((row.qtys||{})['sablu_brioche']?.['pz']||0);
+      tot += sabluB;
     });
-  });
+    return tot;
+  }
+
+  // Somma la sessione corrente + eventuali altre sessioni con la stessa data (se impostata)
+  let ordinateOggi = sumRows(ses.rows);
+  const targetDate = ses.date || '';
+  if(targetDate){
+    Object.entries(orders).forEach(([key, s])=>{
+      if(key === currentSession) return; // già sommata sopra
+      if((s.date||'') !== targetDate) return;
+      ordinateOggi += sumRows(s.rows);
+    });
+  }
 
   const totEl = document.getElementById('briocheTotale');
   const ordEl = document.getElementById('briocheOrdinate');
@@ -921,6 +933,7 @@ function renderGrid(){
       ses.rows[ri].qtys[pid][imb] = val;
       // update row total in place (no full re-render)
       updateRowTotals(ri);
+      updateBriocheCounter();
     });
     inp.addEventListener('blur', e=>{
       updateAllTotals();
@@ -1424,8 +1437,16 @@ function renderProduzione(){
     cards += `<div class="prod-mini-card" style="border:2px solid var(--accent);">
       <div class="prod-mini-label" style="background:var(--accent);">IMPASTATRICE</div>
       <div class="prod-mini-val" style="color:var(--accent);">${fmtN(totImp)}</div>
-      <div class="prod-mini-sub">B:${pzB} Pa:${pzPa} M÷2:${fmtN(pzM2)} Gr:${pzGrosse} MP:${pzMiniPaf} BB:${pzBabyB} BP:${pzBabyP}${pzSabluB||pzSabluM||pzSabluPa?' SBL:'+( pzSabluB+pzSabluM+pzSabluPa):''}</div>
+      <div class="prod-mini-sub">B:${pzB} Pa:${pzPa} M÷2:${fmtN(pzM2)} Gr:${pzGrosse} MP:${pzMiniPaf} BB:${pzBabyB} BP:${pzBabyP}${pzSabluB||pzSabluM||pzSabluPa?' SBL:'+( pzSabluB+Math.floor(pzSabluM/2)+pzSabluPa):''}</div>
     </div>`;
+    if(pzSabluB || pzSabluM || pzSabluPa){
+      const sabluTotPz = pzSabluB + Math.floor(pzSabluM/2) + pzSabluPa;
+      cards += `<div class="prod-mini-card" style="border:2px solid #b8860b;">
+        <div class="prod-mini-label" style="background:#b8860b;">SABLU PZ TOT</div>
+        <div class="prod-mini-val" style="color:#b8860b;">${sabluTotPz}</div>
+        <div class="prod-mini-sub">B:${pzSabluB} M÷2:${Math.floor(pzSabluM/2)} Pa:${pzSabluPa}</div>
+      </div>`;
+    }
     cards += `<div class="prod-mini-card" style="border:2px solid #5a7a9a;">
       <div class="prod-mini-label" style="background:#5a7a9a;">KG BRIOSCE</div>
       <div class="prod-mini-val" style="color:#5a7a9a;">${kgBrioche}</div>
