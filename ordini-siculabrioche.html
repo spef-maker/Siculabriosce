@@ -1425,7 +1425,7 @@ function renderProduzione(){
     cards += `<div class="prod-mini-card" style="border:2px solid var(--accent);">
       <div class="prod-mini-label" style="background:var(--accent);">IMPASTATRICE</div>
       <div class="prod-mini-val" style="color:var(--accent);">${fmtN(totImp)}</div>
-      <div class="prod-mini-sub">B:${pzB} Pa:${pzPa} M÷2:${fmtN(pzM2)} Gr:${pzGrosse} MP:${pzMiniPaf} BB:${pzBabyB} BP:${pzBabyP}${pzSabluB||pzSabluM||pzSabluPa?' SBL:'+( pzSabluB+Math.floor(pzSabluM/2)+pzSabluPa):''}</div>
+      <div class="prod-mini-sub">B:${pzB} Pa:${pzPa} M÷2:${fmtN(pzM2)} Gr:${pzGrosse} MP:${pzMiniPaf} BB:${pzBabyB} BP:${pzBabyP}</div>
     </div>`;
     cards += `<div class="prod-mini-card" style="border:2px solid #5a7a9a;">
       <div class="prod-mini-label" style="background:#5a7a9a;">KG BRIOSCE</div>
@@ -1489,12 +1489,12 @@ function renderProduzione(){
         <th style="background:#d4a800;color:#fff;">BRIOSCIA</th><td>${pzB}</td>
         <th style="background:#1a7a4a;color:#fff;">PAFFUTELLA</th><td>${pzPa}</td>
         <th style="background:#c0392b;color:#fff;">MINI ÷2</th><td>${fmtN(pzM2)}</td>
-        <th style="background:#6b3a1f;color:#fff;">CHOCO</th><td>${pzCh + pzSabluCh}</td>
+        <th style="background:#6b3a1f;color:#fff;">CHOCO</th><td>${pzCh}</td>
         <th style="background:#b87c1a;color:#fff;">GROSSE</th><td>${pzGrosse}</td>
         <th style="background:#27a060;color:#fff;">MINI PAF</th><td>${pzMiniPaf}</td>
         <th style="background:#e06030;color:#fff;">BABY BR.</th><td>${pzBabyB}</td>
         <th style="background:#208050;color:#fff;">BABY PAF</th><td>${pzBabyP}</td>
-        <th style="background:#7e3bb5;color:#fff;">PANZOTTA</th><td>${pzPz + pzSabluPz}</td>
+        <th style="background:#7e3bb5;color:#fff;">PANZOTTA</th><td>${pzPz}</td>
       </tr></table>
     </div>`;
 
