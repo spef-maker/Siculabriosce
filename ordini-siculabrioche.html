@@ -1646,6 +1646,33 @@ function doAutoBackup(){
   }
 }
 
+// ══════════════════════════════════════════
+// SALVATAGGIO AUTOMATICO OGNI 5 MINUTI
+// ══════════════════════════════════════════
+function startAutoSave(){
+  setInterval(()=>{
+    if(!db || isSaving || saveDebounce) return;
+    const hasData = Object.values(orders).some(s=>(s.rows||[]).length>0);
+    if(!hasData) return;
+    setSyncStatus('saving','Auto-salvataggio…');
+    db.ref('ordini_siculabrioche/v1').set({orders, clients})
+      .then(()=>{ setSyncStatus('ok','Auto-salvato ✓'); saveLocal(); })
+      .catch(()=>setSyncStatus('err','Errore auto-salvataggio'));
+  }, 5 * 60 * 1000); // ogni 5 minuti
+}
+
+// Salvataggio di emergenza prima che la pagina si chiuda
+window.addEventListener('beforeunload', ()=>{
+  // Salva sincrono in localStorage (Firebase è asincrono, non fa in tempo)
+  saveLocal();
+  // Tenta anche Firebase con sendBeacon (best-effort)
+  if(db){
+    try{
+      db.ref('ordini_siculabrioche/v1').set({orders, clients});
+    } catch(e){}
+  }
+});
+
 function scheduleAutoBackup(){
   const checkInterval = 60000; // controlla ogni minuto
 
@@ -2173,7 +2200,7 @@ function initFirebase(){
         db.ref().update(updates)
           .then(()=>{ setSyncStatus('ok','Sincronizzato ✓'); isSaving=false; saveDebounce=null; })
           .catch(()=>{ setSyncStatus('err','Errore sync'); isSaving=false; });
-      }, 1200);
+      }, 300);
     };
 
     let firstLoad = true;
@@ -2937,7 +2964,8 @@ renderProduzione();
 renderAnagrafica();
 updateBriocheCounter();
 scheduleAutoBackup(); // avvia backup automatico 8:30 e 17:30
-initFirebase(); // poi sincronizza con Firebase
+startAutoSave();      // salvataggio automatico ogni 5 minuti
+initFirebase();       // poi sincronizza con Firebase
 askOperator();
 </script>
 </body>
