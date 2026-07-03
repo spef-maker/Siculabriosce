@@ -147,15 +147,18 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--paper);col
 <!-- PAGINA 1 -->
 <div class="page active" id="page1" style="display:none;">
   <div class="welcome-card" id="wCard">
+    <div style="font-size:11px;color:#3a5a44;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">👤 Bentornato!</div>
     <div class="wn" id="wNome">—</div>
     <div class="wd" id="wDet">—</div>
-    <span class="wc" onclick="cambiaCliente()">Non sei tu? Cambia →</span>
+    <div style="font-size:11px;color:#5a8a6a;margin-top:6px;">✓ I tuoi dati sono memorizzati su questo dispositivo</div>
+    <span class="wc" onclick="cambiaCliente()">Non sei tu? Cambia account →</span>
   </div>
   <div id="loginForm">
     <div class="info-box">Inserisci la tua <strong>Partita IVA</strong> o il <strong>codice cliente</strong> Siculabriosce.<br>Verranno ricordati per i prossimi ordini 📱</div>
-    <div class="field"><label>Partita IVA o Codice cliente *</label>
-      <input class="piva-input" type="text" id="f-piva" placeholder="IT12345678901" maxlength="20" autocomplete="off" autocapitalize="characters" inputmode="text">
-      <div class="hint">P.IVA (es. IT12345678901) oppure codice comunicato da Siculabriosce (es. CLI042)</div>
+    <div class="field"><label>Partita IVA o Codice Fiscale *</label>
+      <input class="piva-input" type="text" id="f-piva" placeholder="IT12345678901" maxlength="20" autocomplete="off" autocapitalize="characters" inputmode="text" oninput="feedbackPiva(this.value)">
+      <div class="hint">P.IVA (es. IT12345678901) · Cod. Fiscale (16 caratteri) · o codice cliente (es. CLI042)</div>
+      <div id="piva-feedback" style="margin-top:8px;font-size:13px;font-weight:600;min-height:20px;transition:all .2s;"></div>
     </div>
     <div class="field"><label>Ragione sociale / Nome *</label><input type="text" id="f-nome" placeholder="es. Bar Centrale srl" autocomplete="organization"></div>
     <div class="field"><label>Email</label><input type="email" id="f-email" placeholder="es. ordini@miobar.it" autocomplete="email"></div>
@@ -302,7 +305,14 @@ const firebaseConfig = {
 (function(){
   // Cliente salvato
   try{ const s=localStorage.getItem(SK); if(s){ cc=JSON.parse(s); } }catch(e){}
-  document.getElementById('f-piva').addEventListener('input',function(){this.value=this.value.toUpperCase().replace(/\s/g,'');});
+  document.getElementById('f-piva').addEventListener('input',function(){
+    this.value=this.value.toUpperCase().replace(/\s/g,'');
+    feedbackPiva(this.value);
+  });
+  // Se cliente già salvato, precompila i campi per permettere modifica facile
+  if(cc){
+    // Campi già loggato → mostra welcome card (già gestito sotto)
+  }
 
   // Carica config da Firebase
   try{
@@ -417,6 +427,114 @@ function buildProdotti(){
   });
 }
 
+
+// ══ VALIDAZIONE P.IVA E CODICE FISCALE ══
+function validaInput(valore) {
+  const v = valore.trim().toUpperCase().replace(/\s/g,'');
+  if(!v) return {ok:false, msg:'Inserisci la Partita IVA o il Codice Fiscale.'};
+
+  // Codice cliente interno (es. CLI042) — accettato sempre se inizia con lettere+numeri
+  if(/^[A-Z]{2,4}\d{2,6}$/.test(v)){
+    return {ok:true, tipo:'codice', msg:''};
+  }
+
+  // Partita IVA italiana: IT + 11 cifre, oppure solo 11 cifre
+  const pivaMatch = v.match(/^(?:IT)?(\d{11})$/);
+  if(pivaMatch){
+    const digits = pivaMatch[1];
+    if(validaPartitaIva(digits)){
+      return {ok:true, tipo:'piva', msg:''};
+    } else {
+      return {ok:false, msg:'⚠️ Partita IVA errata — controlla le 11 cifre.'};
+    }
+  }
+
+  // Codice Fiscale: 16 caratteri alfanumerici
+  if(/^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$/.test(v)){
+    if(validaCodiceFiscale(v)){
+      return {ok:true, tipo:'cf', msg:''};
+    } else {
+      return {ok:false, msg:'⚠️ Codice Fiscale errato — controlla i caratteri.'};
+    }
+  }
+
+  // Se ha solo numeri ma non 11 → P.IVA errata
+  if(/^\d+$/.test(v) || /^IT\d+$/i.test(v)){
+    return {ok:false, msg:'⚠️ Partita IVA errata — deve avere 11 cifre (es. IT12345678901).'};
+  }
+
+  // Se ha 16 caratteri ma non corrisponde al CF
+  if(v.length === 16){
+    return {ok:false, msg:'⚠️ Codice Fiscale errato — controlla i caratteri inseriti.'};
+  }
+
+  // Altrimenti accetta come codice cliente generico
+  if(v.length >= 3){
+    return {ok:true, tipo:'codice', msg:''};
+  }
+
+  return {ok:false, msg:'⚠️ Inserisci una P.IVA valida (11 cifre), un Codice Fiscale (16 caratteri) o il codice cliente.'};
+}
+
+function validaPartitaIva(digits) {
+  // Algoritmo di controllo P.IVA italiana (Luhn-like)
+  if(digits.length !== 11) return false;
+  let s = 0;
+  for(let i = 0; i < 11; i++){
+    const d = parseInt(digits[i]);
+    if(i % 2 === 0){
+      s += d;
+    } else {
+      const d2 = d * 2;
+      s += d2 > 9 ? d2 - 9 : d2;
+    }
+  }
+  // Ultima cifra deve fare sì che la somma sia divisibile per 10
+  // Calcolo alternativo ufficiale
+  let s2 = 0;
+  for(let i = 0; i <= 9; i++){
+    const n = parseInt(digits[i]);
+    if(i % 2 === 0){ s2 += n; }
+    else { const d2 = n*2; s2 += d2 > 9 ? d2-9 : d2; }
+  }
+  const check = (10 - (s2 % 10)) % 10;
+  return check === parseInt(digits[10]);
+}
+
+function validaCodiceFiscale(cf) {
+  // Algoritmo di controllo Codice Fiscale italiano
+  if(cf.length !== 16) return false;
+  const valOdd  = {0:1,1:0,2:5,3:7,4:9,5:13,6:15,7:17,8:19,9:21,A:1,B:0,C:5,D:7,E:9,F:13,G:15,H:17,I:19,J:21,K:2,L:4,M:18,N:20,O:11,P:3,Q:6,R:8,S:12,T:14,U:16,V:10,W:22,X:25,Y:24,Z:23};
+  const valEven = {0:0,1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,A:0,B:1,C:2,D:3,E:4,F:5,G:6,H:7,I:8,J:9,K:10,L:11,M:12,N:13,O:14,P:15,Q:16,R:17,S:18,T:19,U:20,V:21,W:22,X:23,Y:24,Z:25};
+  let s = 0;
+  for(let i = 0; i < 15; i++){
+    const ch = cf[i];
+    s += (i % 2 === 0) ? (valOdd[ch] ?? 0) : (valEven[ch] ?? 0);
+  }
+  const expected = String.fromCharCode(65 + (s % 26));
+  return cf[15] === expected;
+}
+
+// ══ FEEDBACK PIVA IN TEMPO REALE ══
+function feedbackPiva(val){
+  const fb = document.getElementById('piva-feedback');
+  if(!fb) return;
+  const v = val.trim();
+  if(!v){ fb.textContent=''; fb.style.color=''; return; }
+  if(v.length < 3){ fb.textContent=''; return; }
+  const check = validaInput(v);
+  if(check.ok){
+    const tipoLabel = check.tipo==='piva'?'✅ Partita IVA valida':check.tipo==='cf'?'✅ Codice Fiscale valido':'✅ Codice cliente accettato';
+    fb.textContent = tipoLabel;
+    fb.style.color = '#2a6e42';
+    document.getElementById('f-piva').style.borderColor = '#2a6e42';
+  } else {
+    fb.textContent = check.msg;
+    fb.style.color = '#c0392b';
+    document.getElementById('f-piva').style.borderColor = '#c0392b';
+  }
+}
+
 // ══ CLIENTE ══
 function sC(d){try{localStorage.setItem(SK,JSON.stringify(d));}catch(e){}}
 function cambiaCliente(){
@@ -475,8 +593,16 @@ function goStep(n){
       const p=document.getElementById('f-piva').value.trim();
       const nm=document.getElementById('f-nome').value.trim();
       if(!p||!nm){mW('warn1','⚠️ Inserisci P.IVA (o codice) e ragione sociale.');return;}
+      // Validazione P.IVA / CF
+      const check = validaInput(p);
+      if(!check.ok){
+        mW('warn1', check.msg);
+        document.getElementById('f-piva').style.borderColor='#c0392b';
+        return;
+      }
       hW('warn1');
-      cc={piva:p,nome:nm.toUpperCase(),email:document.getElementById('f-email').value.trim(),tel:document.getElementById('f-tel').value.trim()};
+      document.getElementById('f-piva').style.borderColor='';
+      cc={piva:p.toUpperCase().replace(/\s/g,''),nome:nm.toUpperCase(),email:document.getElementById('f-email').value.trim(),tel:document.getElementById('f-tel').value.trim()};
       sC(cc);
     }
     const n1=cc.nome.split(/[\s,]+/)[0];
