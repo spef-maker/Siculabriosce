@@ -216,40 +216,65 @@ const DEF_CFG = {
 };
 
 const PRODOTTI_DEF = [
+  // 1. BRIOSCIA
   {id:'brioche',   nome:'BRIOSCIA col tuppo',    emoji:'🥐', defColor:'#fff8dc', defBorder:'#d4a800', defDesc:'La classica brioscia siciliana col suo caratteristico tuppo',
    imballi:[{imb:112,pz:112,label:'Imballo da 112 pz',sub:'imballo grande'},{imb:52,pz:52,label:'Imballo da 52 pz',sub:'imballo medio'},{imb:26,pz:26,label:'Imballo da 26 pz',sub:'imballo piccolo'}]},
+  // 2. MINI
   {id:'mini',      nome:'MINI briosce',          emoji:'🥖', defColor:'#fde8e6', defBorder:'#c0392b', defDesc:'Versione mignon della brioscia siciliana',
    imballi:[{imb:112,pz:112,label:'Imballo da 112 pz'},{imb:52,pz:52,label:'Imballo da 52 pz'},{imb:26,pz:26,label:'Imballo da 26 pz'}]},
+  // 3. PAFFUTELLA
   {id:'paffutella',nome:'PAFFUTELLA',            emoji:'🟢', defColor:'#d5f5e3', defBorder:'#1a7a4a', defDesc:'Soffice e rotonda, senza il tuppo',
    imballi:[{imb:112,pz:112,label:'Imballo da 112 pz'},{imb:52,pz:52,label:'Imballo da 52 pz'},{imb:26,pz:26,label:'Imballo da 26 pz'}]},
+  // 4. PANZOTTA
   {id:'panzotta',  nome:'PANZOTTA',              emoji:'🟣', defColor:'#f0e5fa', defBorder:'#7e3bb5', defDesc:'Grande e tonda, ideale per farciture generose',
    imballi:[{imb:112,pz:112,label:'Imballo da 112 pz'},{imb:52,pz:52,label:'Imballo da 52 pz'},{imb:26,pz:26,label:'Imballo da 26 pz'}]},
+  // 5. CHOCO
   {id:'choco',     nome:'BRIOSCIA al cioccolato',emoji:'🍫', defColor:'#f5ece6', defBorder:'#6b3a1f', defDesc:'Impasto al cacao con gocce di cioccolato',
    imballi:[{imb:112,pz:112,label:'Imballo da 112 pz'},{imb:52,pz:52,label:'Imballo da 52 pz'},{imb:26,pz:26,label:'Imballo da 26 pz'}]},
-  {id:'grosse48',  nome:'GROSSE 105g',           emoji:'🔶', defColor:'#fdf0d0', defBorder:'#b87c1a', defDesc:'Formato maxi da 105g',
-   imballi:[{imb:48,pz:48,label:'Imballo da 48 pz'},{imb:90,pz:90,label:'Imballo da 90 pz'}]},
-  {id:'minipaf',   nome:'MINI PAFFUTELLE',       emoji:'🟩', defColor:'#d0f0e0', defBorder:'#27a060', defDesc:'Paffutella in formato mini',
-   imballi:[{imb:112,pz:112,label:'Imballo da 112 pz'}]},
-  {id:'babybrioche',nome:'BABY BRIOSCE',         emoji:'🧡', defColor:'#fde0d0', defBorder:'#e06030', defDesc:'Briosce in formato baby',
-   imballi:[{imb:112,pz:112,label:'Imballo da 112 pz'}]},
-  {id:'babypaf',   nome:'BABY PAFFUTELLE',       emoji:'💚', defColor:'#c8ecd8', defBorder:'#208050', defDesc:'Paffutella in formato baby',
-   imballi:[{imb:112,pz:112,label:'Imballo da 112 pz'}]},
-  {id:'lat',       nome:'LATTICINI',             emoji:'🥛', defColor:'#e3edf8', defBorder:'#1565a8', defDesc:'Mandorla, Pistacchio, Caffè, Nocciola — venduti a pezzo',
-   imballi:[{imb:'pz',pz:1,label:'Lat. Mandorla',sub:'al pezzo',prodId:'lat_mandorla'},{imb:'pz',pz:1,label:'Lat. Pistacchio',sub:'al pezzo',prodId:'lat_pistacchio'},{imb:'pz',pz:1,label:'Lat. Caffè',sub:'al pezzo',prodId:'lat_caffe'},{imb:'pz',pz:1,label:'Lat. Nocciola',sub:'al pezzo',prodId:'lat_nocciola'}]},
-  {id:'pura',      nome:'PURE',                  emoji:'🌿', defColor:'#c8e6cc', defBorder:'#2d6e3a', defDesc:'Pistacchio, Mandorla, Nocciola — vendute a pezzo',
-   imballi:[{imb:'pz',pz:1,label:'Pura Pistacchio',sub:'al pezzo',prodId:'pura_pistacchio'},{imb:'pz',pz:1,label:'Pura Mandorla',sub:'al pezzo',prodId:'pura_mandorla'},{imb:'pz',pz:1,label:'Pura Nocciola',sub:'al pezzo',prodId:'pura_nocciola'}]},
-  {id:'paste',     nome:'PASTE e FRUTTA MARTORANA',emoji:'🍪',defColor:'#fef0d8', defBorder:'#d4821a', defDesc:'Paste di Mandorla (conf. 6) e Frutta Martorana — al pezzo',
-   imballi:[{imb:'pz',pz:1,label:'Paste Mandorla conf. 6',sub:'al pezzo',prodId:'paste_mand6'},{imb:'pz',pz:1,label:'Frutta Martorana',sub:'al pezzo',prodId:'frutta_mart'}]},
+  // 6. PASTE PER GRANITA — 4 gusti
+  {id:'lat',       nome:'PASTE PER GRANITA',     emoji:'🧊', defColor:'#ddeeff', defBorder:'#1565a8', defDesc:'4 gusti: Mandorla, Mandorla e Pistacchio, Nocciola e Mandorla, Caffè',
+   imballi:[
+     {imb:'pz',pz:1,label:'Mandorla',             sub:'al pezzo',prodId:'lat_mandorla'},
+     {imb:'pz',pz:1,label:'Mandorla e Pistacchio', sub:'al pezzo',prodId:'lat_pistacchio'},
+     {imb:'pz',pz:1,label:'Nocciola e Mandorla',  sub:'al pezzo',prodId:'lat_nocciola'},
+     {imb:'pz',pz:1,label:'Caffè',                sub:'al pezzo',prodId:'lat_caffe'},
+   ]},
+  // 7. PASTE PURE — 3 gusti
+  {id:'pura',      nome:'PASTE PURE',             emoji:'🌿', defColor:'#c8e6cc', defBorder:'#2d6e3a', defDesc:'3 gusti: Pistacchio, Nocciola, Mandorla',
+   imballi:[
+     {imb:'pz',pz:1,label:'Pistacchio',sub:'al pezzo',prodId:'pura_pistacchio'},
+     {imb:'pz',pz:1,label:'Nocciola',  sub:'al pezzo',prodId:'pura_nocciola'},
+     {imb:'pz',pz:1,label:'Mandorla',  sub:'al pezzo',prodId:'pura_mandorla'},
+   ]},
+  // 8. VARIE — Grosse, Mini Paffutelle, Baby, Frutta Martorana, Paste Mandorla
+  {id:'varie',     nome:'VARIE',                  emoji:'✨', defColor:'#f0f0f0', defBorder:'#888888', defDesc:'Grosse 105g, Mini Paffutelle, Baby Briosce, Baby Paffutelle, Frutta Martorana, Paste Mandorla',
+   imballi:[
+     {imb:48, pz:48, label:'Grosse 105g — imb. 48 pz',   prodId:'grosse48_48'},
+     {imb:90, pz:90, label:'Grosse 105g — imb. 90 pz',   prodId:'grosse48_90'},
+     {imb:112,pz:112,label:'Mini Paffutelle — imb. 112 pz',prodId:'minipaf_112'},
+     {imb:112,pz:112,label:'Baby Briosce — imb. 112 pz',  prodId:'babybrioche_112'},
+     {imb:112,pz:112,label:'Baby Paffutelle — imb. 112 pz',prodId:'babypaf_112'},
+     {imb:'pz',pz:1, label:'Frutta Martorana',            prodId:'frutta_mart'},
+     {imb:'pz',pz:1, label:'Paste Mandorla conf. 6',      prodId:'paste_mand6'},
+   ]},
 ];
 
 const NOMI_PROD = {
-  brioche:'BRIOSCIA',mini:'MINI',paffutella:'PAFFUTELLA',panzotta:'PANZOTTA',
-  choco:'BRIOSCIA CHOCO',grosse48:'GROSSE 105g',minipaf:'MINI PAFFUTELLE',
-  babybrioche:'BABY BRIOSCE',babypaf:'BABY PAFFUTELLE',
-  lat_mandorla:'LAT. MANDORLA',lat_pistacchio:'LAT. PISTACCHIO',
-  lat_caffe:'LAT. CAFFE',lat_nocciola:'LAT. NOCCIOLA',
-  pura_pistacchio:'PURA PISTACCHIO',pura_mandorla:'PURA MANDORLA',pura_nocciola:'PURA NOCCIOLA',
-  paste_mand6:'PASTE MANDORLA 6',frutta_mart:'FRUTTA MARTORANA',
+  brioche:'BRIOSCIA', mini:'MINI', paffutella:'PAFFUTELLA',
+  panzotta:'PANZOTTA', choco:'BRIOSCIA CHOCO',
+  // Paste per granita
+  lat_mandorla:'GRANITA Mandorla',
+  lat_pistacchio:'GRANITA Mandorla e Pistacchio',
+  lat_nocciola:'GRANITA Nocciola e Mandorla',
+  lat_caffe:'GRANITA Caffè',
+  // Paste pure
+  pura_pistacchio:'PURA Pistacchio',
+  pura_nocciola:'PURA Nocciola',
+  pura_mandorla:'PURA Mandorla',
+  // Varie
+  grosse48_48:'GROSSE 105g (48 pz)', grosse48_90:'GROSSE 105g (90 pz)',
+  minipaf_112:'MINI PAFFUTELLE', babybrioche_112:'BABY BRIOSCE', babypaf_112:'BABY PAFFUTELLE',
+  frutta_mart:'FRUTTA MARTORANA', paste_mand6:'PASTE MANDORLA 6',
 };
 
 // Mappa prodotto singolo → badge categoria

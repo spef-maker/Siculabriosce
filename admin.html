@@ -218,13 +218,9 @@ input[type=color]{
     <div class="sidebar-item" data-sec="paffutella" onclick="showSec(this)">🟢 Paffutella</div>
     <div class="sidebar-item" data-sec="panzotta" onclick="showSec(this)">🟣 Panzotta</div>
     <div class="sidebar-item" data-sec="choco" onclick="showSec(this)">🍫 Choco</div>
-    <div class="sidebar-item" data-sec="grosse48" onclick="showSec(this)">🔶 Grosse 105g</div>
-    <div class="sidebar-item" data-sec="minipaf" onclick="showSec(this)">🟩 Mini Paffutelle</div>
-    <div class="sidebar-item" data-sec="babybrioche" onclick="showSec(this)">🧡 Baby Briosce</div>
-    <div class="sidebar-item" data-sec="babypaf" onclick="showSec(this)">💚 Baby Paffutelle</div>
-    <div class="sidebar-item" data-sec="lat" onclick="showSec(this)">🥛 Latticini</div>
-    <div class="sidebar-item" data-sec="pura" onclick="showSec(this)">🌿 Pure</div>
-    <div class="sidebar-item" data-sec="paste" onclick="showSec(this)">🍪 Paste e Frutta</div>
+    <div class="sidebar-item" data-sec="lat" onclick="showSec(this)">🧊 Paste per Granita</div>
+    <div class="sidebar-item" data-sec="pura" onclick="showSec(this)">🌿 Paste Pure</div>
+    <div class="sidebar-item" data-sec="varie" onclick="showSec(this)">✨ Varie</div>
     <div class="sidebar-divider">Sistema</div>
     <div class="sidebar-item" data-sec="impostazioni" onclick="showSec(this)">⚙️ Impostazioni</div>
   </nav>
@@ -449,18 +445,14 @@ function cambiaPwd(){
 
 // ══ PRODOTTI CONFIG ══
 const PRODOTTI = [
-  { id:'brioche',    nome:'BRIOSCIA col tuppo',    emoji:'🥐', defColor:'#fff8dc', defBorder:'#d4a800', defDesc:'La classica brioscia siciliana col suo caratteristico tuppo' },
-  { id:'mini',       nome:'MINI briosce',           emoji:'🥖', defColor:'#fde8e6', defBorder:'#c0392b', defDesc:'Versione mignon della brioscia siciliana' },
-  { id:'paffutella', nome:'PAFFUTELLA',             emoji:'🟢', defColor:'#d5f5e3', defBorder:'#1a7a4a', defDesc:'Soffice e rotonda, senza il tuppo' },
-  { id:'panzotta',   nome:'PANZOTTA',               emoji:'🟣', defColor:'#f0e5fa', defBorder:'#7e3bb5', defDesc:'Grande e tonda, ideale per farciture generose' },
-  { id:'choco',      nome:'BRIOSCIA al cioccolato', emoji:'🍫', defColor:'#f5ece6', defBorder:'#6b3a1f', defDesc:'Impasto al cacao con gocce di cioccolato' },
-  { id:'grosse48',   nome:'GROSSE 105g',            emoji:'🔶', defColor:'#fdf0d0', defBorder:'#b87c1a', defDesc:'Formato maxi da 105g' },
-  { id:'minipaf',    nome:'MINI PAFFUTELLE',        emoji:'🟩', defColor:'#d0f0e0', defBorder:'#27a060', defDesc:'Paffutella in formato mini' },
-  { id:'babybrioche',nome:'BABY BRIOSCE',           emoji:'🧡', defColor:'#fde0d0', defBorder:'#e06030', defDesc:'Briosce in formato baby' },
-  { id:'babypaf',    nome:'BABY PAFFUTELLE',        emoji:'💚', defColor:'#c8ecd8', defBorder:'#208050', defDesc:'Paffutella in formato baby' },
-  { id:'lat',        nome:'LATTICINI',              emoji:'🥛', defColor:'#e3edf8', defBorder:'#1565a8', defDesc:'Mandorla, Pistacchio, Caffè, Nocciola — venduti a pezzo' },
-  { id:'pura',       nome:'PURE',                   emoji:'🌿', defColor:'#c8e6cc', defBorder:'#2d6e3a', defDesc:'Pistacchio, Mandorla, Nocciola — vendute a pezzo' },
-  { id:'paste',      nome:'PASTE e FRUTTA MARTORANA',emoji:'🍪',defColor:'#fef0d8', defBorder:'#d4821a', defDesc:'Paste di Mandorla (conf. 6) e Frutta Martorana — al pezzo' },
+  { id:'brioche',    nome:'BRIOSCIA col tuppo',     emoji:'🥐', defColor:'#fff8dc', defBorder:'#d4a800', defDesc:'La classica brioscia siciliana col suo caratteristico tuppo' },
+  { id:'mini',       nome:'MINI briosce',            emoji:'🥖', defColor:'#fde8e6', defBorder:'#c0392b', defDesc:'Versione mignon della brioscia siciliana' },
+  { id:'paffutella', nome:'PAFFUTELLA',              emoji:'🟢', defColor:'#d5f5e3', defBorder:'#1a7a4a', defDesc:'Soffice e rotonda, senza il tuppo' },
+  { id:'panzotta',   nome:'PANZOTTA',                emoji:'🟣', defColor:'#f0e5fa', defBorder:'#7e3bb5', defDesc:'Grande e tonda, ideale per farciture generose' },
+  { id:'choco',      nome:'BRIOSCIA al cioccolato',  emoji:'🍫', defColor:'#f5ece6', defBorder:'#6b3a1f', defDesc:'Impasto al cacao con gocce di cioccolato' },
+  { id:'lat',        nome:'PASTE PER GRANITA',       emoji:'🧊', defColor:'#ddeeff', defBorder:'#1565a8', defDesc:'4 gusti: Mandorla, Mandorla e Pistacchio, Nocciola e Mandorla, Caffè' },
+  { id:'pura',       nome:'PASTE PURE',              emoji:'🌿', defColor:'#c8e6cc', defBorder:'#2d6e3a', defDesc:'3 gusti: Pistacchio, Nocciola, Mandorla' },
+  { id:'varie',      nome:'VARIE',                   emoji:'✨', defColor:'#f0f0f0', defBorder:'#888888', defDesc:'Grosse 105g, Mini Paffutelle, Baby Briosce, Baby Paffutelle, Frutta Martorana, Paste Mandorla' },
 ];
 
 // ══ CONFIGURAZIONE ══
