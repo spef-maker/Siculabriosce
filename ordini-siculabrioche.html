@@ -1550,18 +1550,19 @@ function renderProduzione(){
       grandTotal+=rowPz;
       const corrBg=row.corriere==='BRT'?'#c84b2f':row.corriere==='GLS'?'#2d5fa8':'transparent';
       const corrCol=row.corriere?'#fff':'inherit';
-      tbody+=`<tr>
-        <td style="border:1px solid #ddd;padding:3px 6px;">
+      const trRowBg = row.rowColor ? `background:${row.rowColor};` : (row.pers ? 'background:#fffde6;' : '');
+      tbody+=`<tr ${trRowBg?`style="${trRowBg}"`:''}> 
+        <td style="border:1px solid #ddd;padding:3px 6px;${trRowBg}">
           ${row.clientCod?`<strong style="font-family:var(--mono);font-size:10px;">${esc(row.clientCod)}</strong><span> — </span>`:''}${esc(row.clientNome||'')}
           ${row.lotto?`<span style="font-size:9px;color:#888;"> · L.${esc(row.lotto)}</span>`:''}
         </td>
         ${cells}
-        <td style="text-align:center;font-weight:700;border:1px solid #ddd;">${rowPz||''}</td>
-        <td style="text-align:center;border:1px solid #ddd;">
+        <td style="text-align:center;font-weight:700;border:1px solid #ddd;${trRowBg}">${rowPz||''}</td>
+        <td style="text-align:center;border:1px solid #ddd;${trRowBg}">
           <span style="background:${corrBg};color:${corrCol};padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700;">${row.corriere||''}</span>
         </td>
-        <td style="border:1px solid #ddd;padding:3px 6px;font-size:11px;color:#555;">${esc(row.note||'')}</td>
-        <td style="border:1px solid #ddd;padding:3px 6px;font-size:11px;color:#4a2d6b;font-weight:600;">${esc(row.pers||'')}</td>
+        <td style="border:1px solid #ddd;padding:3px 6px;font-size:11px;color:#555;${trRowBg}">${esc(row.note||'')}</td>
+        <td style="border:1px solid #ddd;padding:3px 6px;font-size:11px;color:#4a2d6b;font-weight:600;${trRowBg}">${esc(row.pers||'')}</td>
       </tr>`;
     });
 
