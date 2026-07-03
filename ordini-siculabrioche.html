@@ -759,7 +759,21 @@ function moveFocus(currentInput, dCol, dRow){
 function renderGrid(){
   ensureSession();
   const ses = getSession();
-  const rows = ses ? (ses.rows || []) : [];
+
+  // Quando il filtro data è attivo, mostra righe da TUTTE le sessioni con quella data
+  let rows, filteredMode = false;
+  if(gridFilterDate){
+    rows = [];
+    Object.values(orders).forEach(s=>{
+      (s.rows||[]).forEach(row=>{
+        const rowDate = row.dataLav || s.date || row.dataRic || '';
+        if(rowDate === gridFilterDate) rows.push(row);
+      });
+    });
+    filteredMode = true;
+  } else {
+    rows = ses ? (ses.rows || []) : [];
+  }
 
   console.log('renderGrid called, rows.length:', rows.length, 'session:', currentSession);
   const nb = document.getElementById('noClientsBanner');
@@ -769,7 +783,9 @@ function renderGrid(){
   if(!wrap) return;
 
   if(rows.length === 0){
-    wrap.innerHTML = '<div class="empty">Nessun ordine. Clicca "+ Aggiungi cliente" per iniziare.</div>';
+    wrap.innerHTML = filteredMode
+      ? `<div class="empty">Nessun ordine con data spedizione ${gridFilterDate.split('-').reverse().join('/')}.</div>`
+      : '<div class="empty">Nessun ordine. Clicca "+ Aggiungi cliente" per iniziare.</div>';
     renderSessionSelector();
     updateBriocheCounter();
     return;
@@ -809,8 +825,8 @@ function renderGrid(){
 
   // Aggiorna info filtro
   const filterInfo = document.getElementById('gridFilterInfo');
-  const filteredCount = gridFilterDate ? rows.filter(r=>(r.dataLav||r.dataRic||'')===gridFilterDate).length : rows.length;
-  if(filterInfo) filterInfo.style.display = gridFilterDate && filteredCount < rows.length ? 'inline' : 'none';
+  if(filterInfo) filterInfo.style.display = filteredMode ? 'inline' : 'none';
+  if(filterInfo && filteredMode) filterInfo.textContent = `📅 Filtro attivo: ${gridFilterDate.split('-').reverse().join('/')} — ${rows.length} ordini da tutte le sessioni`;
 
   let bodyRows = rows.map((row,ri)=>{
     let cells = '';
@@ -836,7 +852,7 @@ function renderGrid(){
 
     const hasPers = row.pers && row.pers.trim();
     const rowBg = row.rowColor || (hasPers ? '#fffde6' : '');
-    const rowHidden = gridFilterDate && (row.dataLav||row.dataRic||'') !== gridFilterDate;
+    const rowHidden = !filteredMode && gridFilterDate && (row.dataLav||row.dataRic||'') !== gridFilterDate;
     const trStyle = rowBg ? `style="background:${rowBg}"` : '';
     const clientCellStyle = rowBg ? `style="background:${rowBg};"` : '';
     return `<tr data-ri="${ri}" class="${rowHidden?'row-hidden':''}" ${trStyle}>
