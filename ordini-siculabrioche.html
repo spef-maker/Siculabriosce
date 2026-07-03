@@ -2952,22 +2952,38 @@ document.getElementById('btnChangeOperator').addEventListener('click', ()=>{
 });
 
 // ── Filtro data lavorazione in griglia ──
-document.getElementById('gridFilterDateInput').addEventListener('change', function(){
-  gridFilterDate = this.value;
+function applyDateFilter(date){
+  gridFilterDate = date;
+  // Propaga il filtro anche a Produzione e Confezionamento
+  const prodEl = document.getElementById('prodFilterDate');
+  const confEl = document.getElementById('confFilterDate');
+  if(prodEl) prodEl.value = date;
+  if(confEl) confEl.value = date;
   renderGrid();
+  renderProduzione();
+  renderConfezionamento();
+}
+
+document.getElementById('gridFilterDateInput').addEventListener('change', function(){
+  applyDateFilter(this.value);
 });
 document.getElementById('gridFilterDateInput').addEventListener('input', function(){
-  gridFilterDate = this.value;
-  renderGrid();
+  applyDateFilter(this.value);
 });
 document.getElementById('btnApplyGridFilter').addEventListener('click', ()=>{
-  gridFilterDate = document.getElementById('gridFilterDateInput').value;
-  renderGrid();
+  applyDateFilter(document.getElementById('gridFilterDateInput').value);
 });
 document.getElementById('btnClearGridFilter').addEventListener('click', ()=>{
-  gridFilterDate='';
+  // Azzera tutti e tre i filtri
   document.getElementById('gridFilterDateInput').value='';
+  const prodEl = document.getElementById('prodFilterDate');
+  const confEl = document.getElementById('confFilterDate');
+  if(prodEl) prodEl.value='';
+  if(confEl) confEl.value='';
+  gridFilterDate='';
   renderGrid();
+  renderProduzione();
+  renderConfezionamento();
 });
 
 // ── Init ──
