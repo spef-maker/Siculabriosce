@@ -236,17 +236,34 @@ input[type=color]{
     <div class="section active" id="sec-generale">
       <div class="section-title">🏠 Intestazione del form</div>
 
+      <div class="card" style="background:#fff8e1;border-color:#f9c74f;">
+        <h3 style="color:#7a5f00;">⚠️ Come funzionano le immagini</h3>
+        <p style="font-size:13px;color:#555;line-height:1.7;margin-bottom:10px;">
+          Le immagini devono essere inserite come <strong>URL online</strong> (non file locali).<br>
+          Firebase non supporta file grandi — carica solo l'indirizzo web dell'immagine.
+        </p>
+        <p style="font-size:13px;color:#555;line-height:1.7;margin-bottom:6px;"><strong>Come ottenere un URL immagine:</strong></p>
+        <ol style="font-size:12px;color:#666;line-height:2;margin-left:18px;">
+          <li>Carica la foto su <strong>Google Drive</strong> → click destro → "Ottieni link" → "Chiunque con il link" → copia il link</li>
+          <li>Oppure carica su <strong>imgbb.com</strong> (gratuito) → copia il "Direct link"</li>
+          <li>Oppure se hai il sito web, carica lì la foto e copia l'URL</li>
+        </ol>
+        <div style="background:#fff;border-radius:6px;padding:10px;margin-top:10px;font-size:12px;color:#888;">
+          💡 Esempio URL valido: <code style="background:#f5f5f5;padding:2px 6px;border-radius:3px;">https://drive.google.com/uc?id=XXXXX</code>
+        </div>
+      </div>
+
       <div class="card">
         <h3>Logo</h3>
         <div class="upload-area" id="logoUpload" onclick="triggerUpload('logoFile')" ondragover="dragOver(event,this)" ondrop="dropFile(event,'logo',this)">
           <div class="upload-icon">🖼</div>
-          <div class="upload-txt">Clicca o trascina il tuo logo qui<br><span style="font-size:11px;color:#bbb;">PNG, JPG, SVG · max 2MB</span></div>
+          <div class="upload-txt">Anteprima locale<br><span style="font-size:11px;color:#e88;">⚠️ Per salvare usa l'URL qui sotto</span></div>
           <img class="upload-preview" id="logoPreview">
         </div>
         <input type="file" id="logoFile" accept="image/*" style="display:none;" onchange="handleImg(this,'logo','logoPreview','logoUpload')">
         <div style="margin-top:12px;">
           <label class="lbl">Oppure inserisci l'URL del logo</label>
-          <input type="text" id="logoUrl" placeholder="https://esempio.com/logo.png" oninput="previewUrl(this.value,'logoPreview','logoUpload')">
+          <input type="text" id="logoUrl" placeholder="https://esempio.com/logo.png" style="border:2px solid #d4a800;" oninput="previewUrl(this.value,'logoPreview','logoUpload')">
         </div>
       </div>
 
@@ -559,7 +576,7 @@ function buildProdSections(){
         <h3>Immagine prodotto</h3>
         <div class="upload-area" id="${p.id}-imgArea" onclick="triggerUpload('${p.id}-imgFile')" ondragover="dragOver(event,this)" ondrop="dropFile(event,'${p.id}-img',this)">
           <div class="upload-icon">${p.emoji}</div>
-          <div class="upload-txt">Clicca o trascina la foto del prodotto<br><span style="font-size:11px;color:#bbb;">JPG, PNG · max 2MB · consigliato 800×500</span></div>
+          <div class="upload-txt">Anteprima locale<br><span style="font-size:11px;color:#e88;">⚠️ Per salvare inserisci l'URL qui sotto</span></div>
           <img class="upload-preview" id="${p.id}-imgPreview">
         </div>
         <input type="file" id="${p.id}-imgFile" accept="image/*" style="display:none;" onchange="handleImg(this,'${p.id}-img','${p.id}-imgPreview','${p.id}-imgArea')">
@@ -628,6 +645,7 @@ function caricaUiDaCfg(){
 // ══ RACCOLTA CONFIG ══
 function raccogliCfg(){
   cfg.logo = document.getElementById('logoUrl').value.trim();
+  cfg.logoBase64 = ''; // non salviamo base64 su Firebase
   cfg.topbarTxt = document.getElementById('topbarTxt').value.trim();
   cfg.subtitleTxt = document.getElementById('subtitleTxt').value.trim();
   cfg.welcomeTxt = document.getElementById('welcomeTxt').value.trim();
@@ -648,7 +666,7 @@ function raccogliCfg(){
       sfondo: document.getElementById(`${p.id}-sfondo`)?.value || p.defColor,
       bordo:  document.getElementById(`${p.id}-bordo`)?.value || p.defBorder,
       img: imgUrl,
-      imgBase64: cfg.prodotti[p.id]?.imgBase64 || '',
+      imgBase64: '', // non salviamo base64 su Firebase
     };
   });
   return cfg;
@@ -657,17 +675,32 @@ function raccogliCfg(){
 // ══ SALVA ══
 function salvaConfig(){
   raccogliCfg();
+
+  // Stima dimensione dati — base64 causa errori Firebase
+  const cfgStr = JSON.stringify(cfg);
+  const sizeKB = Math.round(cfgStr.length / 1024);
+  if(sizeKB > 800){
+    alert('⚠️ I dati sono troppo grandi (' + sizeKB + 'KB).\nRimuovi le immagini caricate come file e usa URL online invece.');
+    return;
+  }
+
   if(db){
-    document.getElementById('syncLbl').textContent = 'Salvataggio…';
+    document.getElementById('syncLbl').textContent = 'Salvataggio ' + sizeKB + 'KB…';
     db.ref('ordini_siculabrioche/v1/form_config').set(cfg)
       .then(()=>{
-        document.getElementById('syncLbl').textContent = 'Salvato ✓';
+        document.getElementById('syncLbl').textContent = '✓ Salvato ' + sizeKB + 'KB';
         flashSaved();
+        // Conferma visiva
+        alert('✅ Salvato correttamente!\nLe modifiche sono visibili sul form clienti entro pochi secondi.\n\nDimensione: ' + sizeKB + 'KB');
       })
-      .catch(()=>{ document.getElementById('syncLbl').textContent = 'Errore salvataggio'; });
+      .catch((err)=>{
+        document.getElementById('syncLbl').textContent = '✗ Errore Firebase';
+        alert('❌ Errore salvataggio Firebase:\n' + err.message + '\n\nPossibile causa: dati troppo grandi. Usa URL per le immagini invece di caricare file.');
+      });
   } else {
     try{ localStorage.setItem('form_cfg', JSON.stringify(cfg)); }catch(e){}
     flashSaved();
+    alert('✅ Salvato localmente.\n(Connessione Firebase non disponibile — ricarica la pagina)');
   }
 }
 
