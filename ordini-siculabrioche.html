@@ -485,7 +485,7 @@ function imbLabel(imb){ return IMBALLO_LABELS[imb] || imb; }
 const PRODUCTS = [
   { id:'brioche',    name:'BRIOSCIA',          imballi:[112,52,26,'gross8','camp','pz'],              pz_per_imballo:{112:112,52:52,26:26,gross8:80,camp:8,pz:1},     unit:'imballi', color:'#d4a800', colorLight:'#fff8dc' },
   { id:'mini',       name:'MINI',              imballi:[112,52,26,'pz'],      pz_per_imballo:{112:112,52:52,26:26,pz:1},             unit:'imballi', color:'#c0392b', colorLight:'#fde8e6' },
-  { id:'paffutella', name:'PAFFUTELLA',        imballi:[26,52,112,20,40,80,'pz'],pz_per_imballo:{26:26,52:52,112:112,20:20,40:40,80:80,pz:1},unit:'imballi', color:'#1a7a4a', colorLight:'#e0f5ea',
+  { id:'paffutella', name:'PAFFUTELLA',        imballi:[112,52,26,20,40,80,'pz'],pz_per_imballo:{26:26,52:52,112:112,20:20,40:40,80:80,pz:1},unit:'imballi', color:'#1a7a4a', colorLight:'#e0f5ea',
     colorByImb:{26:'#2ecc71',52:'#2ecc71',112:'#2ecc71', 20:'#145a32',40:'#145a32',80:'#145a32'},
     colorLightByImb:{26:'#d5f5e3',52:'#d5f5e3',112:'#d5f5e3', 20:'#a9dfbf',40:'#a9dfbf',80:'#a9dfbf'} },
   { id:'panzotta',   name:'PANZOTTA',          imballi:[112,52,26,'pz'],      pz_per_imballo:{112:112,52:52,26:26,pz:1},     unit:'imballi', color:'#7e3bb5', colorLight:'#f0e5fa' },
@@ -1995,6 +1995,11 @@ function renderConfezionamento(){
     // ── Totale imballi: standard/estero vs neutri (con personalizzazione) ──
     const imballiTot    = {112:0, 52:0, 26:0, gross8:0, camp:0};
     const imballiNeutri = {112:0, 52:0, 26:0};
+    // Dettaglio neutri per prodotto
+    const PROD_NEUTRI = ['brioche','mini','paffutella','panzotta','choco','romana','romanachoco','romanamini'];
+    const neutriPerProd = {};
+    PROD_NEUTRI.forEach(pid=>{ neutriPerProd[pid] = {112:0,52:0,26:0}; });
+
     rows.forEach(row=>{
       const persLower = (row.pers||''). toLowerCase().trim();
       const isEstero = ESTERO_PERS.includes(persLower);
@@ -2006,6 +2011,7 @@ function renderConfezionamento(){
           if(v === 0) return;
           if(hasPers && (imb===112||imb===52||imb===26)){
             imballiNeutri[imb] += v;
+            if(neutriPerProd[p.id]) neutriPerProd[p.id][imb] = (neutriPerProd[p.id][imb]||0) + v;
           } else if(imballiTot.hasOwnProperty(imb)){
             imballiTot[imb] += v;
           }
@@ -2014,22 +2020,22 @@ function renderConfezionamento(){
     });
     // Campionatura totale = GR.8 × 8 + campionature dirette
     const campTotConf = (imballiTot.gross8 * 8) + imballiTot.camp;
-    // Romana, Romana Choco, Romana Mini → sempre neutri, spostarli da imballiTot a imballiNeutri
+    // Romana, Romana Choco, Romana Mini → sempre neutri
     ['romana','romanachoco','romanamini'].forEach(pid=>{
       rows.forEach(row=>{
         const v = parseInt((row.qtys||{})[pid]?.['26']||0);
         if(v===0) return;
-        // Se era finito in imballiTot (perché hasPers=false), spostalo in neutri
         imballiNeutri[26] += v;
         imballiTot[26] = Math.max(0, imballiTot[26] - v);
+        if(neutriPerProd[pid]) neutriPerProd[pid][26] = (neutriPerProd[pid][26]||0) + v;
       });
-      // per romana ha anche 52
       if(pid==='romana'){
         rows.forEach(row=>{
           const v52 = parseInt((row.qtys||{})[pid]?.['52']||0);
           if(v52===0) return;
           imballiNeutri[52] += v52;
           imballiTot[52] = Math.max(0, imballiTot[52] - v52);
+          if(neutriPerProd[pid]) neutriPerProd[pid][52] = (neutriPerProd[pid][52]||0) + v52;
         });
       }
     });
@@ -2083,34 +2089,52 @@ function renderConfezionamento(){
     html += `</tbody></table>`;
 
     // ── Riepilogo imballi complessivi ──
-    html += `<div style="display:flex;gap:12px;align-items:center;margin-bottom:6px;">
+    html += `<div style="margin-bottom:6px;">
       <span style="font-family:Georgia,serif;font-size:15px;color:var(--muted);">Imballi totali da preparare:</span>
     </div>
-    <table class="print-table" style="border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+    <table class="print-table" style="border-collapse:collapse;font-size:12px;margin-bottom:10px;width:100%;">
       <thead><tr>
         <th colspan="6" style="background:#333;color:#fff;padding:5px 10px;text-align:left;font-size:11px;">IMBALLI STANDARD (senza personalizzazione / estero)</th>
-        <th colspan="6" style="background:#5a3a7a;color:#fff;padding:5px 10px;text-align:left;font-size:11px;">IMBALLI NEUTRI (con personalizzazione)</th>
+        <th colspan="6" style="background:#5a3a7a;color:#fff;padding:5px 10px;text-align:left;font-size:11px;">IMBALLI NEUTRI TOTALI</th>
         ${imballiTot.gross8>0||campTotConf>0?`<th colspan="${(imballiTot.gross8>0?2:0)+(campTotConf>0?2:0)}" style="background:#8b4513;color:#fff;padding:5px 10px;text-align:left;font-size:11px;">CAMPIONATURA</th>`:''}
       </tr></thead>
       <tbody><tr>
-        <th style="background:#c84b2f;color:#fff;padding:6px 14px;">112</th>
-        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot[112]}</td>
-        <th style="background:#2d5fa8;color:#fff;padding:6px 14px;">52</th>
-        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot[52]}</td>
-        <th style="background:#1a7a4a;color:#fff;padding:6px 14px;">26</th>
-        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot[26]}</td>
-        <th style="background:#7a4a9a;color:#fff;padding:6px 14px;">112N</th>
-        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiNeutri[112]}</td>
-        <th style="background:#5a3a8a;color:#fff;padding:6px 14px;">52N</th>
-        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiNeutri[52]}</td>
-        <th style="background:#3a2a7a;color:#fff;padding:6px 14px;">26N</th>
-        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiNeutri[26]}</td>
-        ${imballiTot.gross8>0?`<th style="background:#b87c1a;color:#fff;padding:6px 14px;">GR.8</th>
-        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${imballiTot.gross8}</td>`:''}
-        ${campTotConf>0?`<th style="background:#8b4513;color:#fff;padding:6px 14px;">CAMP.</th>
-        <td style="padding:6px 14px;font-weight:700;font-size:16px;border:1px solid var(--line);">${campTotConf}</td>`:''}
+        <th style="background:#c84b2f;color:#fff;padding:5px 12px;">112</th>
+        <td style="padding:5px 12px;font-weight:700;font-size:15px;border:1px solid var(--line);">${imballiTot[112]}</td>
+        <th style="background:#2d5fa8;color:#fff;padding:5px 12px;">52</th>
+        <td style="padding:5px 12px;font-weight:700;font-size:15px;border:1px solid var(--line);">${imballiTot[52]}</td>
+        <th style="background:#1a7a4a;color:#fff;padding:5px 12px;">26</th>
+        <td style="padding:5px 12px;font-weight:700;font-size:15px;border:1px solid var(--line);">${imballiTot[26]}</td>
+        <th style="background:#7a4a9a;color:#fff;padding:5px 12px;">112N</th>
+        <td style="padding:5px 12px;font-weight:700;font-size:15px;border:1px solid var(--line);">${imballiNeutri[112]}</td>
+        <th style="background:#5a3a8a;color:#fff;padding:5px 12px;">52N</th>
+        <td style="padding:5px 12px;font-weight:700;font-size:15px;border:1px solid var(--line);">${imballiNeutri[52]}</td>
+        <th style="background:#3a2a7a;color:#fff;padding:5px 12px;">26N</th>
+        <td style="padding:5px 12px;font-weight:700;font-size:15px;border:1px solid var(--line);">${imballiNeutri[26]}</td>
+        ${imballiTot.gross8>0?`<th style="background:#b87c1a;color:#fff;padding:5px 12px;">GR.8</th><td style="padding:5px 12px;font-weight:700;font-size:15px;border:1px solid var(--line);">${imballiTot.gross8}</td>`:''}
+        ${campTotConf>0?`<th style="background:#8b4513;color:#fff;padding:5px 12px;">CAMP.</th><td style="padding:5px 12px;font-weight:700;font-size:15px;border:1px solid var(--line);">${campTotConf}</td>`:''}
       </tr></tbody>
-    </table>`;
+    </table>
+    ${Object.entries(neutriPerProd).some(([,v])=>Object.values(v).some(x=>x>0))?`
+    <table class="print-table" style="border-collapse:collapse;font-size:12px;margin-bottom:20px;">
+      <thead><tr style="background:#5a3a7a;color:#fff;">
+        <th style="padding:4px 12px;text-align:left;">PRODOTTO</th>
+        <th style="padding:4px 12px;text-align:center;">112 NEUTRO</th>
+        <th style="padding:4px 12px;text-align:center;">52 NEUTRO</th>
+        <th style="padding:4px 12px;text-align:center;">26 NEUTRO</th>
+      </tr></thead>
+      <tbody>${Object.entries(neutriPerProd).map(([pid,v])=>{
+        if(!Object.values(v).some(x=>x>0)) return '';
+        const p = PRODUCTS.find(x=>x.id===pid);
+        return `<tr style="border-bottom:1px solid #ddd;">
+          <td style="padding:4px 12px;font-weight:700;background:${p?p.colorLight:'#f5f5f5'};color:${p?p.color:'#333'};">${p?p.name:pid}</td>
+          <td style="padding:4px 12px;text-align:center;font-weight:${v[112]?'700':'400'};color:${v[112]?'#000':'#ccc'};">${v[112]||'—'}</td>
+          <td style="padding:4px 12px;text-align:center;font-weight:${v[52]?'700':'400'};color:${v[52]?'#000':'#ccc'};">${v[52]||'—'}</td>
+          <td style="padding:4px 12px;text-align:center;font-weight:${v[26]?'700':'400'};color:${v[26]?'#000':'#ccc'};">${v[26]||'—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`:''}`;
+
 
     // ── Dettaglio clienti per etichetta (sotto, collassabile visivamente con indentazione) ──
     html += `<details class="no-print" style="margin-bottom:20px;">
