@@ -1815,13 +1815,24 @@ const SHELF_LIFE_MAP = {
   '120 giorni': 120,
 };
 
-function getShelfLife(pers){
+function getShelfLife(pers, prodId){
   if(!pers) return 90;
-  // Prima controlla anagrafica personalizzazioni (localStorage)
+  // Check anagrafica first
   const anag = getPersAnagrafica();
   const found = anag.find(p=>p.nome.toLowerCase()===pers.toLowerCase().trim());
-  if(found && found.giorni) return found.giorni;
-  // Fallback alla mappa statica
+  if(found){
+    // Per-product override
+    const prodMap = {
+      'brioche':'gg_brioche','mini':'gg_mini','paffutella':'gg_paf',
+      'panzotta':'gg_panzotta','choco':'gg_choco','romana':'gg_romana',
+      'romanachoco':'gg_romanachoco','romanamini':'gg_romanachoco'
+    };
+    if(prodId && prodMap[prodId] && found[prodMap[prodId]]){
+      return found[prodMap[prodId]];
+    }
+    if(found.giorni) return found.giorni;
+  }
+  // Fallback to static map
   return SHELF_LIFE_MAP[pers.toLowerCase().trim()] || 90;
 }
 
@@ -1879,8 +1890,7 @@ function calcScadenza(row){
     results.push({ etichetta: 'LA ROMANA', giorni: 90 });
   }
 
-  // 5. Personalizzazione (non estera) → usa anagrafica per giorni
-  // Ma solo se non duplica un'etichetta già aggiunta da un prodotto
+  // 5. Personalizzazione (non estera) → controlla se ha shelf life per prodotto
   if(row.pers && row.pers.trim()){
     const persNorm = row.pers.trim().toUpperCase();
     const alreadyHas = results.some(r=> r.etichetta.toUpperCase() === persNorm
@@ -1889,8 +1899,43 @@ function calcScadenza(row){
       || (persNorm === 'ROMANA' || persNorm.includes('LA ROMANA')) && r.etichetta === 'LA ROMANA'
     );
     if(!alreadyHas){
-      const giorni = getShelfLife(row.pers);
-      results.push({ etichetta: row.pers, giorni });
+      // Controlla se ha shelf life per-prodotto configurate
+      const anag = getPersAnagrafica();
+      const found = anag.find(p=>p.nome.toLowerCase()===row.pers.toLowerCase().trim());
+      const prodKeys = ['gg_brioche','gg_mini','gg_paf','gg_panzotta','gg_choco','gg_romana','gg_romanachoco'];
+      const hasProdSpecific = found && prodKeys.some(k=>found[k]);
+
+      if(hasProdSpecific){
+        // Genera una riga separata per ogni prodotto che ha shelf life diversa E che è presente nell'ordine
+        const prodShelfMap = {
+          'brioche':   {key:'gg_brioche',    label:'BRIOSCIA'},
+          'mini':      {key:'gg_mini',       label:'MINI'},
+          'paffutella':{key:'gg_paf',        label:'PAFFUTELLA'},
+          'panzotta':  {key:'gg_panzotta',   label:'PANZOTTA'},
+          'choco':     {key:'gg_choco',      label:'CHOCO'},
+          'romana':    {key:'gg_romana',     label:'LA ROMANA'},
+          'romanachoco':{key:'gg_romanachoco',label:'ROMANA CHOCO'},
+        };
+        const defaultGg = found.giorni || getShelfLife(row.pers) || 90;
+        const added = new Set();
+
+        Object.entries(prodShelfMap).forEach(([pid,cfg])=>{
+          const hasProd = (row.qtys||{})[pid] && Object.values(row.qtys[pid]).some(v=>parseInt(v||0)>0);
+          if(!hasProd) return;
+          const gg = found[cfg.key] || defaultGg;
+          const etichetta = `${row.pers} — ${cfg.label}`;
+          if(!added.has(etichetta)){
+            added.add(etichetta);
+            results.push({ etichetta, giorni: gg, prodId: pid });
+          }
+        });
+
+        // Se nessun prodotto specifico trovato, aggiungi voce generica
+        if(added.size === 0) results.push({ etichetta: row.pers, giorni: defaultGg });
+      } else {
+        const giorni = getShelfLife(row.pers);
+        results.push({ etichetta: row.pers, giorni });
+      }
     }
   }
 
@@ -2690,12 +2735,20 @@ document.getElementById('btnAddPers').addEventListener('click', ()=>{
         </div>
       </div>
       <div style="overflow-y:auto;flex:1;padding:16px 24px;">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;" id="persAnagTable">
-          <thead><tr style="border-bottom:2px solid #eee;">
-            <th style="text-align:left;padding:6px 8px;color:#888;font-size:11px;font-family:monospace;text-transform:uppercase;">Nome personalizzazione</th>
-            <th style="text-align:center;padding:6px 8px;color:#888;font-size:11px;font-family:monospace;text-transform:uppercase;width:90px;">Shelf-life (gg)</th>
-            <th style="text-align:center;padding:6px 8px;color:#888;font-size:11px;font-family:monospace;text-transform:uppercase;width:130px;">Imballo</th>
-            <th style="width:36px;"></th>
+        <p style="font-size:11px;color:#888;margin:0 0 8px;">Il campo "Default" vale per tutti i prodotti non specificati. Lascia vuoto un campo per usare il default.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;" id="persAnagTable">
+          <thead><tr style="border-bottom:2px solid #eee;background:#f5f5f5;">
+            <th style="text-align:left;padding:6px 8px;color:#555;font-size:10px;font-family:monospace;text-transform:uppercase;">Nome</th>
+            <th style="text-align:center;padding:6px 8px;color:#555;font-size:10px;font-family:monospace;text-transform:uppercase;width:60px;">Default gg</th>
+            <th style="text-align:center;padding:6px 8px;color:#d4a800;font-size:10px;font-family:monospace;text-transform:uppercase;width:55px;">Brioscia</th>
+            <th style="text-align:center;padding:6px 8px;color:#c0392b;font-size:10px;font-family:monospace;text-transform:uppercase;width:45px;">Mini</th>
+            <th style="text-align:center;padding:6px 8px;color:#1a7a4a;font-size:10px;font-family:monospace;text-transform:uppercase;width:55px;">Paffutella</th>
+            <th style="text-align:center;padding:6px 8px;color:#7e3bb5;font-size:10px;font-family:monospace;text-transform:uppercase;width:55px;">Panzotta</th>
+            <th style="text-align:center;padding:6px 8px;color:#6b3a1f;font-size:10px;font-family:monospace;text-transform:uppercase;width:45px;">Choco</th>
+            <th style="text-align:center;padding:6px 8px;color:#b5451b;font-size:10px;font-family:monospace;text-transform:uppercase;width:55px;">Romana</th>
+            <th style="text-align:center;padding:6px 8px;color:#7a2e10;font-size:10px;font-family:monospace;text-transform:uppercase;width:60px;">R.Choco</th>
+            <th style="text-align:center;padding:6px 8px;color:#888;font-size:10px;font-family:monospace;text-transform:uppercase;width:130px;">Imballo</th>
+            <th style="width:30px;"></th>
           </tr></thead>
           <tbody id="persAnagBody"></tbody>
         </table>
@@ -2724,21 +2777,39 @@ document.getElementById('btnAddPers').addEventListener('click', ()=>{
 
   document.body.appendChild(dialog);
 
+  const PROD_SHELF_KEYS = [
+    {key:'gg_brioche',   label:'Brioscia',  color:'#d4a800'},
+    {key:'gg_mini',      label:'Mini',      color:'#c0392b'},
+    {key:'gg_paf',       label:'Paffutella',color:'#1a7a4a'},
+    {key:'gg_panzotta',  label:'Panzotta',  color:'#7e3bb5'},
+    {key:'gg_choco',     label:'Choco',     color:'#6b3a1f'},
+    {key:'gg_romana',    label:'Romana',    color:'#b5451b'},
+    {key:'gg_romanachoco',label:'R.Choco',  color:'#7a2e10'},
+  ];
+
   function renderAnagBody(){
     const list = getPersAnagrafica();
     const tbody = document.getElementById('persAnagBody');
+    const bg = (i)=>i%2===0?'#fff':'#fafafa';
     tbody.innerHTML = list.map((p,i)=>`
       <tr style="border-bottom:1px solid #f0f0f0;" data-i="${i}">
-        <td style="padding:7px 8px;">
+        <td style="padding:5px 6px;">
           <input class="panag-nome" data-i="${i}" value="${esc(p.nome)}" maxlength="60"
-            style="width:100%;border:1px solid #e0e0e0;border-radius:4px;padding:5px 7px;font-size:13px;background:${i%2===0?'#fff':'#fafafa'};">
+            style="width:100%;border:1px solid #e0e0e0;border-radius:4px;padding:4px 6px;font-size:12px;background:${bg(i)};">
         </td>
-        <td style="padding:7px 8px;text-align:center;">
+        <td style="padding:5px 6px;text-align:center;">
           <input class="panag-giorni" data-i="${i}" type="number" min="1" max="730" value="${p.giorni||90}"
-            style="width:70px;border:1px solid #e0e0e0;border-radius:4px;padding:5px 7px;font-size:13px;text-align:center;background:${i%2===0?'#fff':'#fafafa'};">
+            style="width:52px;border:1px solid #e0e0e0;border-radius:4px;padding:4px;font-size:12px;text-align:center;background:${bg(i)};">
         </td>
-        <td style="padding:7px 8px;text-align:center;">
-          <select class="panag-imballo" data-i="${i}" style="width:120px;border:1px solid #e0e0e0;border-radius:4px;padding:5px 7px;font-size:12px;background:${i%2===0?'#fff':'#fafafa'};">
+        ${PROD_SHELF_KEYS.map(pk=>`
+        <td style="padding:5px 4px;text-align:center;">
+          <input class="panag-prodgg" data-i="${i}" data-key="${pk.key}" type="number" min="1" max="730" 
+            value="${p[pk.key]||''}" placeholder="—"
+            style="width:48px;border:1px solid #e8e8e8;border-radius:4px;padding:3px;font-size:11px;text-align:center;background:${bg(i)};color:${pk.color};"
+            title="${pk.label}">
+        </td>`).join('')}
+        <td style="padding:5px 4px;text-align:center;">
+          <select class="panag-imballo" data-i="${i}" style="width:110px;border:1px solid #e0e0e0;border-radius:4px;padding:4px;font-size:11px;background:${bg(i)};">
             <option value="" ${!p.imballo?'selected':''}>— Nessuno —</option>
             <option value="26_sicula" ${p.imballo==='26_sicula'?'selected':''}>26 Sicula</option>
             <option value="52_sicula" ${p.imballo==='52_sicula'?'selected':''}>52 Sicula</option>
@@ -2750,41 +2821,34 @@ document.getElementById('btnAddPers').addEventListener('click', ()=>{
             <option value="112_neutro" ${p.imballo==='112_neutro'?'selected':''}>112 Neutro</option>
           </select>
         </td>
-        <td style="padding:7px 8px;text-align:center;">
-          <button class="panag-del" data-i="${i}" style="border:none;background:none;cursor:pointer;color:#c0392b;font-size:16px;padding:2px 6px;" title="Elimina">🗑</button>
+        <td style="padding:5px 4px;text-align:center;">
+          <button class="panag-del" data-i="${i}" style="border:none;background:none;cursor:pointer;color:#c0392b;font-size:14px;padding:2px 4px;" title="Elimina">🗑</button>
         </td>
       </tr>`).join('');
 
-    // Listeners inline editing
+    // Listeners
     tbody.querySelectorAll('.panag-nome').forEach(inp=>{
-      inp.addEventListener('change', ()=>{
-        const list2 = getPersAnagrafica();
-        list2[+inp.dataset.i].nome = inp.value.trim();
-        savePersAnagrafica(list2);
-      });
+      inp.addEventListener('change', ()=>{ const l=getPersAnagrafica(); l[+inp.dataset.i].nome=inp.value.trim(); savePersAnagrafica(l); });
     });
     tbody.querySelectorAll('.panag-giorni').forEach(inp=>{
+      inp.addEventListener('change', ()=>{ const l=getPersAnagrafica(); l[+inp.dataset.i].giorni=parseInt(inp.value)||90; savePersAnagrafica(l); });
+    });
+    tbody.querySelectorAll('.panag-prodgg').forEach(inp=>{
       inp.addEventListener('change', ()=>{
-        const list2 = getPersAnagrafica();
-        list2[+inp.dataset.i].giorni = parseInt(inp.value)||90;
-        savePersAnagrafica(list2);
+        const l=getPersAnagrafica(); const idx=+inp.dataset.i; const key=inp.dataset.key;
+        if(inp.value) l[idx][key]=parseInt(inp.value);
+        else delete l[idx][key];
+        savePersAnagrafica(l);
       });
     });
     tbody.querySelectorAll('.panag-imballo').forEach(sel=>{
-      sel.addEventListener('change', ()=>{
-        const list2 = getPersAnagrafica();
-        list2[+sel.dataset.i].imballo = sel.value;
-        savePersAnagrafica(list2);
-      });
+      sel.addEventListener('change', ()=>{ const l=getPersAnagrafica(); l[+sel.dataset.i].imballo=sel.value; savePersAnagrafica(l); });
     });
     tbody.querySelectorAll('.panag-del').forEach(btn=>{
       btn.addEventListener('click', ()=>{
-        const list2 = getPersAnagrafica();
-        const nome = list2[+btn.dataset.i].nome;
+        const l=getPersAnagrafica(); const nome=l[+btn.dataset.i].nome;
         if(!confirm(`Eliminare "${nome}"?`)) return;
-        list2.splice(+btn.dataset.i, 1);
-        savePersAnagrafica(list2);
-        renderAnagBody();
+        l.splice(+btn.dataset.i,1); savePersAnagrafica(l); renderAnagBody();
       });
     });
   }
