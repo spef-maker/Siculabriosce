@@ -1717,21 +1717,55 @@ function removeClient(cod){
 let storicoAcItems = [];
 let storicoSelected = null;
 
+function gotoOrder(sesId, ri){
+  // Switcha al tab Ordini
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const tabOrdini = document.querySelector('.tab[data-tab="ordini"]');
+  if(tabOrdini) tabOrdini.classList.add('active');
+  document.getElementById('tab-ordini').classList.add('active');
+
+  // Imposta la sessione corretta
+  if(orders[sesId]){
+    currentSession = sesId;
+    const ses = orders[sesId];
+    if(ses.date) document.getElementById('sessionDate').value = ses.date;
+    renderSessionSelector();
+    renderGrid();
+
+    // Dopo il render, scrolla e evidenzia la riga
+    setTimeout(()=>{
+      const tr = document.querySelector(`table.grid tr[data-ri="${ri}"]`);
+      if(tr){
+        tr.scrollIntoView({behavior:'smooth', block:'center'});
+        tr.classList.add('row-active');
+        // Lampeggio per attirare l'attenzione
+        let count = 0;
+        const blink = setInterval(()=>{
+          tr.style.outline = count%2===0 ? '3px solid var(--accent)' : '';
+          if(++count > 5) clearInterval(blink);
+        }, 300);
+      }
+    }, 150);
+  }
+  flashMsg(`→ Aperto ordine di ${orders[sesId]?.rows?.[ri]?.clientNome||''}`);
+}
+
 function renderStorico(clientCod, clientNome){
   const el = document.getElementById('storicoContent');
   if(!clientCod && !clientNome){ el.innerHTML='<div class="empty">Cerca un cliente per vedere tutti i suoi ordini.</div>'; return; }
 
   // Raccoglie tutti gli ordini del cliente da tutte le sessioni
   const found = [];
-  Object.values(orders).forEach(ses=>{
-    (ses.rows||[]).forEach(row=>{
+  Object.entries(orders).forEach(([sesId, ses])=>{
+    (ses.rows||[]).forEach((row,ri)=>{
       const match = clientCod
         ? row.clientCod === clientCod
         : row.clientNome && row.clientNome.toUpperCase() === clientNome.toUpperCase();
       if(!match) return;
       let totPz = 0;
       PRODUCTS.forEach(p=>{ p.imballi.forEach(imb=>{ totPz += parseInt((row.qtys||{})[p.id]?.[imb]||0)*p.pz_per_imballo[imb]; }); });
-      found.push({ date: ses.date||'', row, totPz });
+      found.push({ date: ses.date||'', row, totPz, sesId, ri });
     });
   });
 
@@ -1782,7 +1816,7 @@ function renderStorico(clientCod, clientNome){
 
   // Lista ordini
   html += `<div style="display:flex;flex-direction:column;gap:10px;">`;
-  found.forEach(({date, row, totPz})=>{
+  found.forEach(({date, row, totPz, sesId, ri})=>{
     const dow = date ? ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][new Date(date+'T00:00:00').getDay()] : '';
     const corrBg = row.corriere==='BRT'?'#c84b2f':row.corriere==='GLS'?'#2d5fa8':'#888';
     const corrShow = row.corriere ? `<span style="background:${corrBg};color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px;">${row.corriere}</span>` : '';
@@ -1793,17 +1827,20 @@ function renderStorico(clientCod, clientNome){
         const v=parseInt((row.qtys||{})[p.id]?.[imb]||0);
         if(!v) return;
         prodList+=`<span style="background:${p.colorLight};border:1px solid ${p.color}44;border-radius:3px;padding:2px 7px;font-size:12px;margin:2px;">
-          <span style="color:${p.color};font-weight:700;">${p.name}</span> ${imb}×${v}
+          <span style="color:${p.color};font-weight:700;">${p.name}</span> ${esc(String(imb))}×${v}
         </span>`;
       });
     });
 
-    html += `<div style="background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;">
+    html += `<div style="background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;cursor:default;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
         <span style="font-family:Georgia,serif;font-size:15px;font-weight:400;">📅 ${fmtD(date)}${dow?' — '+dow:''}</span>
         ${corrShow}
         ${row.lotto?`<span style="font-family:var(--mono);font-size:11px;color:var(--green);border:1px solid var(--green);border-radius:3px;padding:1px 6px;">L.${esc(row.lotto)}</span>`:''}
-        <span style="margin-left:auto;font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);">${totPz} pz</span>
+        <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);">${totPz} pz</span>
+        <button onclick="gotoOrder('${sesId}',${ri})" style="margin-left:auto;padding:4px 12px;border:1px solid var(--accent);border-radius:4px;background:var(--accent);color:#fff;cursor:pointer;font-size:12px;font-weight:700;">
+          → Vai all'ordine
+        </button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:${row.note||row.pers?'8px':'0'};">${prodList||'<span style="color:var(--muted);font-size:12px;">Nessun prodotto inserito</span>'}</div>
       ${row.note?`<div style="font-size:12px;color:var(--muted);font-style:italic;">📝 ${esc(row.note)}</div>`:''}
