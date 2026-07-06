@@ -68,6 +68,8 @@ table.grid td{
 }
 table.grid tr:hover td{background:#faf8f4;}
 table.grid tr.row-hidden{display:none !important;}
+table.grid tr.row-active td{outline:2px solid var(--accent) !important;outline-offset:-1px;}
+table.grid tr.row-active .client-cell{background:#fff8dc !important;}
 table.grid .client-cell{min-width:220px;font-weight:600;position:sticky;left:0;background:#fff;z-index:5;border-right:2px solid var(--line-strong);}
 table.grid tr:hover .client-cell{background:#faf8f4;}
 /* cod-cell removed - merged into client-cell */
@@ -951,6 +953,11 @@ function renderGrid(){
       notifyChange();
     });
 
+    inp.addEventListener('focus', e=>{
+      document.querySelectorAll('table.grid tr.row-active').forEach(r=>r.classList.remove('row-active'));
+      const tr = e.target.closest('tr');
+      if(tr) tr.classList.add('row-active');
+    });
     // Navigazione tastiera: Tab/Invio → destra, Shift+Tab → sinistra, ↑↓ → su/giù
     inp.addEventListener('keydown', e=>{
       if(e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)){
@@ -1018,6 +1025,11 @@ function renderGrid(){
       if(ses.rows[ri]) ses.rows[ri][field] = e.target.value;
       if(document.getElementById("tab-produzione").classList.contains("active")) renderProduzione();
       notifyChange();
+    });
+    inp.addEventListener('focus', e=>{
+      document.querySelectorAll('table.grid tr.row-active').forEach(r=>r.classList.remove('row-active'));
+      const tr = e.target.closest('tr');
+      if(tr) tr.classList.add('row-active');
     });
   });
 
@@ -2723,7 +2735,7 @@ document.getElementById('btnAddPers').addEventListener('click', ()=>{
   dialog.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
 
   dialog.innerHTML = `
-    <div style="background:#fff;border-radius:10px;padding:0;max-width:560px;width:95%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+    <div style="background:#fff;border-radius:10px;padding:0;max-width:900px;width:96%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.3);">
       <div style="padding:20px 24px 14px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;">
         <div>
           <h3 style="margin:0;font-family:Georgia,serif;font-size:18px;">🏷 Anagrafica personalizzazioni</h3>
