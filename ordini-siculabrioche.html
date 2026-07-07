@@ -551,20 +551,16 @@ function setSyncStatus(cls,msg){
 // SESSION MANAGEMENT
 // ══════════════════════════════════════════
 function cleanEmptySessions(){
-  // Elimina automaticamente tutte le sessioni con 0 clienti tranne quella corrente
   let changed = false;
   Object.keys(orders).forEach(k=>{
-    if(k === currentSession) return; // non eliminare mai quella attiva
+    if(k === currentSession) return;
     if(!(orders[k].rows||[]).length){
       delete orders[k];
       changed = true;
     }
   });
-  if(changed){
-    renderSessionSelector();
-    renderProduzione();
-    renderConfezionamento();
-  }
+  // Non triggerare re-render qui — verrà fatto dal chiamante
+  return changed;
 }
 
 function ensureSession(){
@@ -1659,11 +1655,8 @@ function startAutoSave(){
     if(!db || isSaving || saveDebounce) return;
     const hasData = Object.values(orders).some(s=>(s.rows||[]).length>0);
     if(!hasData) return;
-    setSyncStatus('saving','Auto-salvataggio…');
-    (() => { const _s = Object.keys(orders).length > 0 || clients.length > 0; if(_s) db.ref('ordini_siculabrioche/v1').set({orders, clients}); else console.warn('BLOCCO SALVATAGGIO: dati vuoti, non sovrascrivo Firebase'); })()
-      .then(()=>{ setSyncStatus('ok','Auto-salvato ✓'); saveLocal(); })
-      .catch(()=>setSyncStatus('err','Errore auto-salvataggio'));
-  }, 5 * 60 * 1000); // ogni 5 minuti
+    safeSetFirebase();
+  }, 5 * 60 * 1000);
 }
 
 // Salvataggio di emergenza prima che la pagina si chiuda
@@ -1673,7 +1666,7 @@ window.addEventListener('beforeunload', ()=>{
   // Tenta anche Firebase con sendBeacon (best-effort)
   if(db){
     try{
-      (() => { const _s = Object.keys(orders).length > 0 || clients.length > 0; if(_s) db.ref('ordini_siculabrioche/v1').set({orders, clients}); else console.warn('BLOCCO SALVATAGGIO: dati vuoti, non sovrascrivo Firebase'); })();
+      safeSetFirebase();
     } catch(e){}
   }
 });
@@ -2312,6 +2305,15 @@ function loadLocal(){
   return false;
 }
 
+function safeSetFirebase(){
+  if(!db) return;
+  const hasData = Object.keys(orders).some(k=>(orders[k].rows||[]).length > 0) || clients.length > 0;
+  if(!hasData){ console.warn('BLOCCO: dati vuoti, non salvo su Firebase'); return; }
+  db.ref('ordini_siculabrioche/v1').set({orders, clients})
+    .then(()=>{ setSyncStatus('ok','Salvato ✓'); })
+    .catch(e=>{ console.error('Firebase set error:', e); setSyncStatus('err','Errore salvataggio'); });
+}
+
 function initFirebase(){
   try{
     if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -2363,14 +2365,14 @@ function initFirebase(){
           if(vuotePrima.length){
             vuotePrima.forEach(k=>delete orders[k]);
             saveLocal();
-            (() => { const _s = Object.keys(orders).length > 0 || clients.length > 0; if(_s) db.ref('ordini_siculabrioche/v1').set({orders, clients}); else console.warn('BLOCCO SALVATAGGIO: dati vuoti, non sovrascrivo Firebase'); })().catch(()=>{});
+            safeSetFirebase();
           }
         } else {
           // Firebase vuoto → carica i dati locali
           const hasLocalData = Object.keys(orders).length > 0 || clients.length > 0;
           if(hasLocalData){
             setSyncStatus('saving','Caricamento dati su Firebase…');
-            (() => { const _s = Object.keys(orders).length > 0 || clients.length > 0; if(_s) db.ref('ordini_siculabrioche/v1').set({orders, clients}); else console.warn('BLOCCO SALVATAGGIO: dati vuoti, non sovrascrivo Firebase'); })()
+            safeSetFirebase()
               .then(()=>setSyncStatus('ok','Dati caricati ✓'))
               .catch(()=>setSyncStatus('err','Errore caricamento'));
           }
@@ -2507,7 +2509,7 @@ document.getElementById('btnRestore').addEventListener('change', function(e){
       // Salva subito su Firebase così tutte le colleghe vedono i dati
       if(db){
         setSyncStatus('saving','Caricamento su Firebase…');
-        (() => { const _s = Object.keys(orders).length > 0 || clients.length > 0; if(_s) db.ref('ordini_siculabrioche/v1').set({orders, clients}); else console.warn('BLOCCO SALVATAGGIO: dati vuoti, non sovrascrivo Firebase'); })()
+        safeSetFirebase()
           .then(()=>{ setSyncStatus('ok','Dati condivisi ✓'); flashMsg('✓ Dati ripristinati e condivisi con tutte le colleghe!'); })
           .catch(()=>{ flashMsg('Dati ripristinati localmente (errore Firebase)'); });
       } else {
@@ -2637,7 +2639,7 @@ document.getElementById('btnPurgeByDate').addEventListener('click', ()=>{
     // Salva su Firebase per propagare la pulizia a tutti
     if(db){
       setSyncStatus('saving','Pulizia in corso…');
-      (() => { const _s = Object.keys(orders).length > 0 || clients.length > 0; if(_s) db.ref('ordini_siculabrioche/v1').set({orders, clients}); else console.warn('BLOCCO SALVATAGGIO: dati vuoti, non sovrascrivo Firebase'); })()
+      safeSetFirebase()
         .then(()=>{ setSyncStatus('ok','Pulizia completata ✓'); })
         .catch(()=>setSyncStatus('err','Errore salvataggio'));
     }
