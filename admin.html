@@ -180,6 +180,22 @@ input[type=color]{
 .pwd-section{background:#fff8e1;border:1px solid #f9c74f;border-radius:8px;padding:16px;margin-top:16px;}
 
 .tag{display:inline-block;background:#eee;border-radius:4px;padding:2px 7px;font-size:11px;font-family:monospace;color:#555;}
+
+/* LISTINI */
+.listini-tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap;}
+.listino-tab{padding:8px 16px;border:2px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);transition:all .15s;}
+.listino-tab.active{background:var(--red);color:#fff;border-color:var(--red);}
+.listino-tab:hover:not(.active){background:#f5f5f5;}
+.listini-table{width:100%;border-collapse:collapse;font-size:13px;}
+.listini-table th{background:var(--ink);color:#fff;padding:8px 10px;text-align:left;font-family:monospace;font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+.listini-table td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+.listini-table tr:hover td{background:#fafaf8;}
+.listini-table td:first-child{font-weight:600;color:var(--ink);}
+.price-input{width:80px;padding:5px 7px;border:1px solid var(--line);border-radius:4px;font-size:13px;font-family:monospace;text-align:right;}
+.price-input:focus{outline:none;border-color:var(--red);}
+.tot-input{width:90px;padding:5px 7px;border:1px solid var(--line);border-radius:4px;font-size:13px;font-family:monospace;text-align:right;background:#fafaf8;}
+.listino-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;color:#fff;margin-left:6px;}
+
 </style>
 </head>
 <body>
@@ -221,7 +237,12 @@ input[type=color]{
     <div class="sidebar-item" data-sec="lat" onclick="showSec(this)">🧊 Paste per Granita</div>
     <div class="sidebar-item" data-sec="pura" onclick="showSec(this)">🌿 Paste Pure</div>
     <div class="sidebar-item" data-sec="varie" onclick="showSec(this)">✨ Varie</div>
+    <div class="sidebar-divider">Prezzi</div>
+    <div class="sidebar-item" data-sec="listini" onclick="showSec(this)">💰 Listini prezzi</div>
+    <div class="sidebar-item" data-sec="clientifasce" onclick="showSec(this)">👥 Clienti e fasce</div>
     <div class="sidebar-divider">Sistema</div>
+    <div class="sidebar-item" data-sec="listini" onclick="showSec(this)">💶 Listini prezzi</div>
+    <div class="sidebar-item" data-sec="clientifasce" onclick="showSec(this)">👥 Clienti → Fascia</div>
     <div class="sidebar-item" data-sec="impostazioni" onclick="showSec(this)">⚙️ Impostazioni</div>
   </nav>
 
@@ -348,6 +369,287 @@ input[type=color]{
     <!-- ── SEZIONI PRODOTTI ── -->
     <!-- Template generato via JS per ogni prodotto -->
     <div id="prodSections"></div>
+
+
+
+    <!-- ── CLIENTI E FASCE ── -->
+    <div class="section" id="sec-clientifasce">
+      <div class="section-title">👥 Clienti e fasce di prezzo</div>
+
+      <div class="card" style="background:#e8f5ee;border-color:#7dc48a;">
+        <h3 style="color:#1a5a2a;">ℹ️ Come assegnare una fascia</h3>
+        <p style="font-size:13px;color:#333;line-height:1.7;margin-top:6px;">
+          Inserisci la <strong>P.IVA o Codice Fiscale</strong> del cliente e seleziona la fascia di prezzo.<br>
+          Quando il cliente accede al form con la sua P.IVA, vedrà automaticamente i suoi prezzi dedicati.
+        </p>
+      </div>
+
+      <!-- Aggiungi cliente manuale -->
+      <div class="card">
+        <h3>Aggiungi o modifica cliente</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <div style="flex:2;min-width:200px;">
+            <label class="lbl">P.IVA o Codice Fiscale</label>
+            <input type="text" id="cf-piva" placeholder="IT12345678901" style="text-transform:uppercase;">
+          </div>
+          <div style="flex:1;min-width:160px;">
+            <label class="lbl">Nome cliente (opzionale)</label>
+            <input type="text" id="cf-nome" placeholder="Bar Centrale srl">
+          </div>
+          <div style="flex:1;min-width:140px;">
+            <label class="lbl">Fascia di prezzo</label>
+            <select id="cf-fascia">
+              <option value="">-- Seleziona --</option>
+              <option value="nord">Nord</option>
+              <option value="sud">Sud</option>
+              <option value="sulposto">Sul Posto</option>
+              <option value="distr_nord">Distributore Nord</option>
+              <option value="distr_sud">Distributore Sud</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-sm" onclick="aggiungiFascia()">+ Aggiungi / Aggiorna</button>
+      </div>
+
+      <!-- Caricamento da Excel -->
+      <div class="card">
+        <h3>Carica da Excel/CSV</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6;">
+          Prepara un file CSV con colonne: <code>piva,nome,fascia</code><br>
+          Esempio riga: <code>IT12345678901,Bar Centrale,nord</code>
+        </p>
+        <label class="btn-sm" for="csvUpload" style="display:inline-block;cursor:pointer;">📂 Carica CSV</label>
+        <input type="file" id="csvUpload" accept=".csv,.txt" style="display:none;" onchange="caricaCSVFasce(this)">
+      </div>
+
+      <!-- Elenco clienti -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;">
+          <strong id="cf-count">0 clienti</strong>
+          <input type="text" id="cf-search" placeholder="Cerca P.IVA o nome..." style="width:220px;padding:6px 10px;border:1px solid var(--line);border-radius:4px;font-size:13px;" oninput="renderClientiFasce()">
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr>
+            <th style="background:var(--ink);color:#fff;padding:8px 12px;text-align:left;">P.IVA / Codice</th>
+            <th style="background:var(--ink);color:#fff;padding:8px 12px;text-align:left;">Nome</th>
+            <th style="background:var(--ink);color:#fff;padding:8px 12px;text-align:left;">Fascia</th>
+            <th style="background:var(--ink);color:#fff;padding:8px 12px;width:60px;"></th>
+          </tr></thead>
+          <tbody id="cf-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── LISTINI PREZZI ── -->
+    <div class="section" id="sec-listini">
+      <div class="section-title">💶 Listini prezzi per fascia</div>
+
+      <div class="card" style="background:#e8f5ee;border-color:#2a6e42;">
+        <h3 style="color:#1a4a22;">Come funziona</h3>
+        <p style="font-size:13px;color:#444;line-height:1.7;">
+          Ogni fascia ha un listino prezzi dedicato. Il cliente entra con la sua P.IVA → il sistema trova la sua fascia → mostra i prezzi a lui riservati.<br>
+          Il <strong>prezzo al pezzo</strong> (IVA esclusa) viene moltiplicato per le quantità dell'imballo per calcolare il totale cartone.
+        </p>
+      </div>
+
+      <!-- Selettore fascia -->
+      <div class="card">
+        <h3>Seleziona fascia da modificare</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="fasceBtns">
+          <button onclick="selezionaFascia('nord')" class="fascia-btn active" data-fascia="nord" style="padding:8px 16px;border-radius:6px;border:2px solid #1565a8;background:#1565a8;color:#fff;cursor:pointer;font-weight:700;font-size:13px;">Nord</button>
+          <button onclick="selezionaFascia('sud')" class="fascia-btn" data-fascia="sud" style="padding:8px 16px;border-radius:6px;border:2px solid #c84b2f;background:#fff;color:#c84b2f;cursor:pointer;font-weight:700;font-size:13px;">Sud</button>
+          <button onclick="selezionaFascia('sulposto')" class="fascia-btn" data-fascia="sulposto" style="padding:8px 16px;border-radius:6px;border:2px solid #2a6e42;background:#fff;color:#2a6e42;cursor:pointer;font-weight:700;font-size:13px;">Sul Posto</button>
+          <button onclick="selezionaFascia('dist_nord')" class="fascia-btn" data-fascia="dist_nord" style="padding:8px 16px;border-radius:6px;border:2px solid #7e3bb5;background:#fff;color:#7e3bb5;cursor:pointer;font-weight:700;font-size:13px;">Distr. Nord</button>
+          <button onclick="selezionaFascia('dist_sud')" class="fascia-btn" data-fascia="dist_sud" style="padding:8px 16px;border-radius:6px;border:2px solid #b87c1a;background:#fff;color:#b87c1a;cursor:pointer;font-weight:700;font-size:13px;">Distr. Sud</button>
+        </div>
+
+        <div id="fasciaLabel" style="font-family:Georgia,serif;font-size:18px;margin-bottom:14px;color:#444;">Fascia: <strong id="fasciaLabelTxt">Nord</strong></div>
+
+        <!-- Tabella prezzi editabile -->
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;" id="prezziTable">
+            <thead>
+              <tr style="background:var(--ink);color:#fff;">
+                <th style="padding:8px 12px;text-align:left;">Prodotto</th>
+                <th style="padding:8px 12px;text-align:left;">Imballo</th>
+                <th style="padding:8px 12px;text-align:center;">Prezzo al pezzo (€)</th>
+                <th style="padding:8px 12px;text-align:center;">Totale cartone (€)</th>
+                <th style="padding:8px 12px;text-align:center;">IVA</th>
+              </tr>
+            </thead>
+            <tbody id="prezziBody"></tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:8px;">
+          <button class="btn-sm" onclick="salvaListinoCorrente()">💾 Salva listino</button>
+          <button class="btn-outline" onclick="copiaListino()">📋 Copia da altra fascia…</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CLIENTI → FASCIA ── -->
+    <div class="section" id="sec-clientifasce">
+      <div class="section-title">👥 Assegna fascia ai clienti</div>
+
+      <div class="card">
+        <h3>Carica da Excel</h3>
+        <p style="font-size:13px;color:#666;margin-bottom:12px;line-height:1.6;">
+          Carica un file Excel con due colonne: <strong>PIVA</strong> e <strong>FASCIA</strong>.<br>
+          La colonna FASCIA deve contenere uno di questi valori: <code style="background:#f5f5f5;padding:1px 5px;border-radius:3px;">nord</code> <code style="background:#f5f5f5;padding:1px 5px;border-radius:3px;">sud</code> <code style="background:#f5f5f5;padding:1px 5px;border-radius:3px;">sulposto</code> <code style="background:#f5f5f5;padding:1px 5px;border-radius:3px;">dist_nord</code> <code style="background:#f5f5f5;padding:1px 5px;border-radius:3px;">dist_sud</code>
+        </p>
+        <label class="btn-sm" for="excelUpload" style="display:inline-block;cursor:pointer;">📂 Carica file Excel</label>
+        <input type="file" id="excelUpload" accept=".xlsx,.xls,.csv" style="display:none;" onchange="caricaExcelFasce(this)">
+        <div id="excelFeedback" style="margin-top:10px;font-size:13px;"></div>
+      </div>
+
+      <div class="card">
+        <h3>Aggiungi cliente manualmente</h3>
+        <div class="field-row">
+          <div>
+            <label class="lbl">Partita IVA cliente</label>
+            <input type="text" id="nuovoPivaInput" placeholder="IT12345678901" style="text-transform:uppercase;">
+          </div>
+          <div>
+            <label class="lbl">Fascia assegnata</label>
+            <select id="nuovaFasciaInput">
+              <option value="nord">Nord</option>
+              <option value="sud">Sud</option>
+              <option value="sulposto">Sul Posto</option>
+              <option value="dist_nord">Distributore Nord</option>
+              <option value="dist_sud">Distributore Sud</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button class="btn-sm" onclick="aggiungiClienteFascia()">+ Aggiungi</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Clienti assegnati</h3>
+        <div style="margin-bottom:10px;">
+          <input type="text" id="cercaClienteFascia" placeholder="Cerca per P.IVA…" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;" oninput="filtraClientiFasce()">
+        </div>
+        <div style="overflow-y:auto;max-height:400px;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;" id="tabellaClientiFasce">
+            <thead><tr style="background:#f5f5f5;">
+              <th style="padding:8px;text-align:left;border-bottom:1px solid var(--line);">P.IVA</th>
+              <th style="padding:8px;text-align:left;border-bottom:1px solid var(--line);">Fascia</th>
+              <th style="padding:8px;border-bottom:1px solid var(--line);"></th>
+            </tr></thead>
+            <tbody id="bodyClientiFasce"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:#aaa;" id="contatoreClienti"></div>
+      </div>
+    </div>
+
+
+
+    <!-- ── CLIENTI E FASCE ── -->
+    <div class="section" id="sec-clientifasce">
+      <div class="section-title">👥 Clienti e fasce di prezzo</div>
+
+      <div class="card" style="background:#e8f5ee;border-color:#7dc48a;">
+        <h3 style="color:#1a5a2a;">ℹ️ Come assegnare una fascia</h3>
+        <p style="font-size:13px;color:#333;line-height:1.7;margin-top:6px;">
+          Inserisci la <strong>P.IVA o Codice Fiscale</strong> del cliente e seleziona la fascia di prezzo.<br>
+          Quando il cliente accede al form con la sua P.IVA, vedrà automaticamente i suoi prezzi dedicati.
+        </p>
+      </div>
+
+      <!-- Aggiungi cliente manuale -->
+      <div class="card">
+        <h3>Aggiungi o modifica cliente</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <div style="flex:2;min-width:200px;">
+            <label class="lbl">P.IVA o Codice Fiscale</label>
+            <input type="text" id="cf-piva" placeholder="IT12345678901" style="text-transform:uppercase;">
+          </div>
+          <div style="flex:1;min-width:160px;">
+            <label class="lbl">Nome cliente (opzionale)</label>
+            <input type="text" id="cf-nome" placeholder="Bar Centrale srl">
+          </div>
+          <div style="flex:1;min-width:140px;">
+            <label class="lbl">Fascia di prezzo</label>
+            <select id="cf-fascia">
+              <option value="">-- Seleziona --</option>
+              <option value="nord">Nord</option>
+              <option value="sud">Sud</option>
+              <option value="sulposto">Sul Posto</option>
+              <option value="distr_nord">Distributore Nord</option>
+              <option value="distr_sud">Distributore Sud</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-sm" onclick="aggiungiFascia()">+ Aggiungi / Aggiorna</button>
+      </div>
+
+      <!-- Caricamento da Excel -->
+      <div class="card">
+        <h3>Carica da Excel/CSV</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6;">
+          Prepara un file CSV con colonne: <code>piva,nome,fascia</code><br>
+          Esempio riga: <code>IT12345678901,Bar Centrale,nord</code>
+        </p>
+        <label class="btn-sm" for="csvUpload" style="display:inline-block;cursor:pointer;">📂 Carica CSV</label>
+        <input type="file" id="csvUpload" accept=".csv,.txt" style="display:none;" onchange="caricaCSVFasce(this)">
+      </div>
+
+      <!-- Elenco clienti -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;">
+          <strong id="cf-count">0 clienti</strong>
+          <input type="text" id="cf-search" placeholder="Cerca P.IVA o nome..." style="width:220px;padding:6px 10px;border:1px solid var(--line);border-radius:4px;font-size:13px;" oninput="renderClientiFasce()">
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr>
+            <th style="background:var(--ink);color:#fff;padding:8px 12px;text-align:left;">P.IVA / Codice</th>
+            <th style="background:var(--ink);color:#fff;padding:8px 12px;text-align:left;">Nome</th>
+            <th style="background:var(--ink);color:#fff;padding:8px 12px;text-align:left;">Fascia</th>
+            <th style="background:var(--ink);color:#fff;padding:8px 12px;width:60px;"></th>
+          </tr></thead>
+          <tbody id="cf-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── LISTINI PREZZI ── -->
+    <div class="section" id="sec-listini">
+      <div class="section-title">💰 Listini prezzi per fascia</div>
+
+      <div class="card" style="background:#e8f5ee;border-color:#7dc48a;">
+        <h3 style="color:#1a5a2a;">ℹ️ Come funziona</h3>
+        <p style="font-size:13px;color:#2a5a3a;line-height:1.7;margin-top:6px;">
+          Inserisci i prezzi per ogni fascia. Il cliente che entra con la sua P.IVA vedrà automaticamente i prezzi della sua fascia.<br>
+          <strong>Prezzo pz</strong> = prezzo al pezzo (IVA esclusa) · <strong>Tot. imballo</strong> = totale cartone (IVA inclusa 10%).
+        </p>
+      </div>
+
+      <!-- Tab fasce -->
+      <div class="listini-tabs">
+        <button class="listino-tab active" onclick="mostraFascia('nord',this)">🔵 Nord</button>
+        <button class="listino-tab" onclick="mostraFascia('sud',this)">🟢 Sud</button>
+        <button class="listino-tab" onclick="mostraFascia('sulposto',this)">🟡 Sul Posto</button>
+        <button class="listino-tab" onclick="mostraFascia('distr_nord',this)">🟠 Distr. Nord</button>
+        <button class="listino-tab" onclick="mostraFascia('distr_sud',this)">🔴 Distr. Sud</button>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="listini-table" id="listini-table">
+          <thead>
+            <tr>
+              <th>Prodotto</th>
+              <th>Imballo</th>
+              <th>Prezzo pz (€)</th>
+              <th>Tot. imballo (€)</th>
+            </tr>
+          </thead>
+          <tbody id="listini-body"></tbody>
+        </table>
+      </div>
+    </div>
 
     <!-- ── IMPOSTAZIONI ── -->
     <div class="section" id="sec-impostazioni">
@@ -483,9 +785,269 @@ function defaultCfg(){
   return c;
 }
 
+
+// ══════════════════════════════════════════
+// LISTINI PREZZI E FASCE CLIENTI
+// ══════════════════════════════════════════
+
+// Struttura prodotti con imballi per la tabella prezzi
+const PRODOTTI_LISTINO = [
+  {key:'brioche_26',   nome:'Brioscia co\'tuppo',  imballo:'Cartone da 26 pz',  pz_imballo:26,  iva:10},
+  {key:'brioche_52',   nome:'Brioscia co\'tuppo',  imballo:'Cartone da 52 pz',  pz_imballo:52,  iva:10},
+  {key:'brioche_112',  nome:'Brioscia co\'tuppo',  imballo:'Cartone da 112 pz', pz_imballo:112, iva:10},
+  {key:'mini_26',      nome:'Mini Brioscia',        imballo:'Cartone da 26 pz',  pz_imballo:26,  iva:10},
+  {key:'mini_52',      nome:'Mini Brioscia',        imballo:'Cartone da 52 pz',  pz_imballo:52,  iva:10},
+  {key:'mini_112',     nome:'Mini Brioscia',        imballo:'Cartone da 112 pz', pz_imballo:112, iva:10},
+  {key:'choco_26',     nome:'Brioscia al Cioccolato', imballo:'Cartone da 26 pz',  pz_imballo:26, iva:10},
+  {key:'choco_52',     nome:'Brioscia al Cioccolato', imballo:'Cartone da 52 pz',  pz_imballo:52, iva:10},
+  {key:'choco_112',    nome:'Brioscia al Cioccolato', imballo:'Cartone da 112 pz', pz_imballo:112,iva:10},
+  {key:'paffutella_20',nome:'Paffutella', imballo:'Cartone da 20 pz + dosatori', pz_imballo:20, iva:10},
+  {key:'paffutella_40',nome:'Paffutella', imballo:'Cartone da 40 pz + dosatori', pz_imballo:40, iva:10},
+  {key:'paffutella_80',nome:'Paffutella', imballo:'Cartone da 80 pz + dosatori', pz_imballo:80, iva:10},
+  {key:'panzotta_26',  nome:'Panzotta', imballo:'Cartone da 26 pz', pz_imballo:26, iva:10},
+  {key:'panzotta_52',  nome:'Panzotta', imballo:'Cartone da 52 pz', pz_imballo:52, iva:10},
+  {key:'panzotta_112', nome:'Panzotta', imballo:'Cartone da 112 pz',pz_imballo:112,iva:10},
+  {key:'lat_mandorla_kg', nome:'Pasta Lattante Mandorla', imballo:'Panetto 1kg (10 pz)', pz_imballo:10, iva:10},
+  {key:'lat_pistacchio_kg',nome:'Pasta Lattante Pistacchio',imballo:'Panetto 1kg (10 pz)',pz_imballo:10,iva:10},
+  {key:'paste_mand6',  nome:'Paste di Mandorla', imballo:'Cartone 6 conf. 500g', pz_imballo:6, iva:10},
+  {key:'frutta_mart',  nome:'Frutta Martorana', imballo:'Cartone 12 conf. 200g',pz_imballo:12,iva:10},
+  {key:'carlotta_6',   nome:'Carlotta (Maxi Brioscia)', imballo:'Cartone da 6 pz', pz_imballo:6, iva:10},
+  {key:'occhio_bue_60',nome:'Occhio di Bue', imballo:'Espositore da 60 pz', pz_imballo:60, iva:10},
+];
+
+// Listini default (Nord caricato dal PDF, altri vuoti)
+const LISTINI_DEFAULT = {
+  nord: {
+    brioche_26:1.00, brioche_52:0.87, brioche_112:0.78,
+    mini_26:1.28, mini_52:1.13, mini_112:0.97,
+    choco_26:1.07, choco_52:0.94, choco_112:0.84,
+    paffutella_20:1.15, paffutella_40:1.03, paffutella_80:0.89,
+    panzotta_26:0.95, panzotta_52:0.81, panzotta_112:0.73,
+    lat_mandorla_kg:15.35, lat_pistacchio_kg:16.53,
+    paste_mand6:11.09, frutta_mart:7.67,
+    carlotta_6:14.00, occhio_bue_60:0.90
+  },
+  sud:{}, sulposto:{}, dist_nord:{}, dist_sud:{}
+};
+
+const FASCE_INFO = {
+  nord:     {nome:'Nord',             colore:'#1565a8'},
+  sud:      {nome:'Sud',              colore:'#c84b2f'},
+  sulposto: {nome:'Sul Posto',        colore:'#2a6e42'},
+  dist_nord:{nome:'Distributore Nord',colore:'#7e3bb5'},
+  dist_sud: {nome:'Distributore Sud', colore:'#b87c1a'},
+};
+
+let fasciaCorrente = 'nord';
+let listiniState = {};   // caricato da Firebase
+let clientiFasce = {};   // {piva: 'nord', ...}
+
+function initListini(){
+  // Carica da Firebase o usa default
+  if(db){
+    db.ref('ordini_siculabrioche/v1/listini').once('value', snap=>{
+      const data = snap.val();
+      listiniState = data || JSON.parse(JSON.stringify(LISTINI_DEFAULT));
+      db.ref('ordini_siculabrioche/v1/clienti_fasce').once('value', snap2=>{
+        clientiFasce = snap2.val() || {};
+        renderPrezziTable();
+        renderClientiFasce();
+      });
+    });
+  } else {
+    listiniState = JSON.parse(JSON.stringify(LISTINI_DEFAULT));
+    renderPrezziTable();
+  }
+}
+
+function selezionaFascia(fascia){
+  fasciaCorrente = fascia;
+  document.querySelectorAll('.fascia-btn').forEach(btn=>{
+    const f = btn.dataset.fascia;
+    const info = FASCE_INFO[f];
+    if(f === fascia){
+      btn.style.background = info.colore;
+      btn.style.color = '#fff';
+      btn.style.borderColor = info.colore;
+    } else {
+      btn.style.background = '#fff';
+      btn.style.color = info.colore;
+      btn.style.borderColor = info.colore;
+    }
+  });
+  document.getElementById('fasciaLabelTxt').textContent = FASCE_INFO[fascia].nome;
+  renderPrezziTable();
+}
+
+function renderPrezziTable(){
+  const tbody = document.getElementById('prezziBody');
+  if(!tbody) return;
+  const prezzi = (listiniState[fasciaCorrente]) || {};
+  let lastNome = '';
+  tbody.innerHTML = PRODOTTI_LISTINO.map(p=>{
+    const pz = prezzi[p.key] || '';
+    const totale = pz ? (pz * p.pz_imballo * (1 + p.iva/100)).toFixed(2) : '';
+    const isNew = p.nome !== lastNome;
+    lastNome = p.nome;
+    const rowBg = isNew ? 'background:#fafaf8;' : '';
+    return `<tr style="${rowBg}border-bottom:1px solid var(--line);">
+      <td style="padding:7px 12px;font-weight:${isNew?'700':'400'};color:${isNew?'var(--ink)':'#777'};">${isNew?p.nome:''}</td>
+      <td style="padding:7px 12px;font-size:12px;color:#666;">${p.imballo}</td>
+      <td style="padding:7px 12px;text-align:center;">
+        <input type="number" step="0.01" min="0"
+          value="${pz}"
+          data-key="${p.key}"
+          data-pz="${p.pz_imballo}"
+          data-iva="${p.iva}"
+          onchange="aggiornaPrezzoRiga(this)"
+          oninput="calcolaRigaTotale(this)"
+          style="width:80px;padding:5px;border:1px solid var(--line);border-radius:4px;text-align:center;font-family:monospace;"
+          placeholder="0.00">
+      </td>
+      <td style="padding:7px 12px;text-align:center;font-family:monospace;font-weight:700;color:var(--green);" id="tot-${p.key}-${fasciaCorrente}">${totale ? '€ '+totale : '—'}</td>
+      <td style="padding:7px 12px;text-align:center;color:#aaa;">${p.iva}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function calcolaRigaTotale(inp){
+  const pz = parseFloat(inp.value)||0;
+  const nPz = parseInt(inp.dataset.pz);
+  const iva = parseInt(inp.dataset.iva);
+  const key = inp.dataset.key;
+  const tot = pz>0 ? '€ '+(pz * nPz * (1+iva/100)).toFixed(2) : '—';
+  const el = document.getElementById('tot-'+key+'-'+fasciaCorrente);
+  if(el) el.textContent = tot;
+}
+
+function aggiornaPrezzoRiga(inp){
+  if(!listiniState[fasciaCorrente]) listiniState[fasciaCorrente] = {};
+  const val = parseFloat(inp.value)||0;
+  if(val > 0) listiniState[fasciaCorrente][inp.dataset.key] = val;
+  else delete listiniState[fasciaCorrente][inp.dataset.key];
+}
+
+function salvaListinoCorrente(){
+  // Leggi tutti i valori dalla tabella
+  document.querySelectorAll('#prezziBody input[data-key]').forEach(inp=>aggiornaPrezzoRiga(inp));
+
+  if(db){
+    document.getElementById('syncLbl').textContent = 'Salvataggio listini…';
+    db.ref('ordini_siculabrioche/v1/listini').set(listiniState)
+      .then(()=>{
+        document.getElementById('syncLbl').textContent = '✓ Listini salvati';
+        alert('✅ Listino ' + FASCE_INFO[fasciaCorrente].nome + ' salvato!\nI clienti di questa fascia vedranno i nuovi prezzi al prossimo accesso.');
+      })
+      .catch(err=>alert('❌ Errore: '+err.message));
+  }
+}
+
+function copiaListino(){
+  const fasce = Object.keys(FASCE_INFO).filter(f=>f!==fasciaCorrente);
+  const scelta = prompt('Copia prezzi da quale fascia?\n'+fasce.map((f,i)=>(i+1)+'. '+FASCE_INFO[f].nome).join('\n')+'\n\nInserisci il numero:');
+  if(!scelta) return;
+  const idx = parseInt(scelta)-1;
+  if(idx<0||idx>=fasce.length){alert('Scelta non valida.');return;}
+  const fonte = fasce[idx];
+  if(!listiniState[fonte]||Object.keys(listiniState[fonte]).length===0){alert('La fascia '+FASCE_INFO[fonte].nome+' non ha prezzi configurati.');return;}
+  if(!confirm('Copiare i prezzi da '+FASCE_INFO[fonte].nome+' a '+FASCE_INFO[fasciaCorrente].nome+'?\nI prezzi esistenti verranno sovrascritti.')) return;
+  listiniState[fasciaCorrente] = Object.assign({}, listiniState[fonte]);
+  renderPrezziTable();
+  alert('✓ Prezzi copiati da '+FASCE_INFO[fonte].nome+'. Clicca "Salva listino" per confermare.');
+}
+
+// ── Clienti → Fasce ──
+function aggiungiClienteFascia(){
+  const piva = document.getElementById('nuovoPivaInput').value.trim().toUpperCase().replace(/\s/g,'');
+  const fascia = document.getElementById('nuovaFasciaInput').value;
+  if(!piva){alert('Inserisci la P.IVA.');return;}
+  clientiFasce[piva] = fascia;
+  salvaClientiFasce();
+  renderClientiFasce();
+  document.getElementById('nuovoPivaInput').value='';
+  flashMsg('✓ '+piva+' assegnato a fascia '+FASCE_INFO[fascia].nome);
+}
+
+function rimuoviClienteFascia(piva){
+  if(!confirm('Rimuovere '+piva+' dalle fasce?')) return;
+  delete clientiFasce[piva];
+  salvaClientiFasce();
+  renderClientiFasce();
+}
+
+function salvaClientiFasce(){
+  if(db){
+    db.ref('ordini_siculabrioche/v1/clienti_fasce').set(clientiFasce)
+      .catch(err=>console.warn('Errore salvataggio fasce:',err));
+  }
+}
+
+function renderClientiFasce(filtro=''){
+  const tbody = document.getElementById('bodyClientiFasce');
+  if(!tbody) return;
+  const entries = Object.entries(clientiFasce)
+    .filter(([p])=>!filtro||p.includes(filtro.toUpperCase()))
+    .sort((a,b)=>a[0].localeCompare(b[0]));
+  if(!entries.length){
+    tbody.innerHTML='<tr><td colspan="3" style="padding:16px;text-align:center;color:#aaa;font-style:italic;">Nessun cliente assegnato</td></tr>';
+  } else {
+    tbody.innerHTML = entries.map(([piva,fascia])=>{
+      const info = FASCE_INFO[fascia]||{nome:fascia,colore:'#888'};
+      return `<tr style="border-bottom:1px solid var(--line);">
+        <td style="padding:7px 12px;font-family:monospace;">${piva}</td>
+        <td style="padding:7px 12px;">
+          <span style="background:${info.colore};color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">${info.nome}</span>
+        </td>
+        <td style="padding:7px 12px;text-align:center;">
+          <button onclick="rimuoviClienteFascia('${piva}')" style="border:none;background:transparent;cursor:pointer;color:#c84b2f;font-size:16px;" title="Rimuovi">🗑</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  document.getElementById('contatoreClienti').textContent = entries.length+' clienti assegnati';
+}
+
+function filtraClientiFasce(){
+  renderClientiFasce(document.getElementById('cercaClienteFascia').value);
+}
+
+function caricaExcelFasce(input){
+  const file = input.files[0];
+  if(!file){return;}
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const text = e.target.result;
+    const lines = text.split(/[\r\n]+/).filter(l=>l.trim());
+    let count=0, errors=0;
+    lines.forEach((line,i)=>{
+      if(i===0 && line.toLowerCase().includes('piva')) return; // header
+      const parts = line.split(/[,;\t]/);
+      if(parts.length<2) return;
+      const piva = parts[0].trim().toUpperCase().replace(/\s/g,'');
+      const fascia = parts[1].trim().toLowerCase().replace(/\s/g,'').replace('ò','o');
+      const fasciaMap = {'nord':'nord','sud':'sud','sulposto':'sulposto','distnord':'dist_nord','distsud':'dist_sud','distributnord':'dist_nord','distributsud':'dist_sud'};
+      const fasciaKey = fasciaMap[fascia] || fascia;
+      if(piva && FASCE_INFO[fasciaKey]){
+        clientiFasce[piva] = fasciaKey; count++;
+      } else { errors++; }
+    });
+    salvaClientiFasce();
+    renderClientiFasce();
+    document.getElementById('excelFeedback').innerHTML =
+      `<span style="color:var(--green);">✓ ${count} clienti caricati</span>${errors>0?` · <span style="color:var(--accent);">${errors} righe non valide</span>`:''}`;
+  };
+  // Prova come CSV prima
+  if(file.name.endsWith('.csv') || file.name.endsWith('.txt')){
+    reader.readAsText(file,'utf-8');
+  } else {
+    document.getElementById('excelFeedback').innerHTML = '<span style="color:#c84b2f;">⚠️ Per ora usa file CSV (salva l'Excel come CSV da Excel: File → Salva come → CSV). Supporto Excel diretto in arrivo.</span>';
+  }
+};
+
 // ══ INIT ══
 function initAdmin(){
   buildProdSections();
+  initListini();
 
   // Firebase
   try{
@@ -505,7 +1067,10 @@ function initAdmin(){
         });
       }
       caricaUiDaCfg();
+      inizializzaListinoNord();
+      renderListinoTable();
       document.getElementById('syncLbl').textContent = 'Connesso ✓';
+      caricaClientiFasceDB();
     });
   } catch(e){
     cfg = defaultCfg();
@@ -606,6 +1171,9 @@ function caricaUiDaCfg(){
   document.getElementById('settTel').value = cfg.tel || '';
   document.getElementById('settAddr').value = cfg.addr || '';
 
+  // Listini
+  inizializzaListinoNord();
+  renderListinoTable();
   // Prodotti
   PRODOTTI.forEach(p=>{
     const pc = cfg.prodotti[p.id] || {};
@@ -642,6 +1210,7 @@ function raccogliCfg(){
   cfg.subtitleTxt = document.getElementById('subtitleTxt').value.trim();
   cfg.welcomeTxt = document.getElementById('welcomeTxt').value.trim();
   ['colorTopbar','colorAccent','colorBg','colorDivider','colorStep','colorStepDone'].forEach(id=>{ cfg[id] = document.getElementById(id).value; });
+  // Listini già aggiornati in tempo reale da aggiornaPrezzo()
   cfg.wa    = document.getElementById('settWa').value.trim();
   cfg.email = document.getElementById('settEmail').value.trim();
   cfg.tel   = document.getElementById('settTel').value.trim();
@@ -796,6 +1365,180 @@ function aggiornaPrevProd(prodId){
   if(boTxt && document.getElementById(`${prodId}-bordo`)) boTxt.value = document.getElementById(`${prodId}-bordo`).value;
 }
 function aggiornaProd(prodId){ /* aggiornamento live */ }
+
+// ══════════════════════════════════════════
+// LISTINI PREZZI
+// ══════════════════════════════════════════
+const FASCE = ['nord','sud','sulposto','distr_nord','distr_sud'];
+const LISTINO_PRODOTTI = [
+  {id:'brioche',       nome:'BRIOSCIA col tuppo',        imballi:[26,52,112]},
+  {id:'mini',          nome:'MINI briosce',              imballi:[26,52,112]},
+  {id:'paffutella',    nome:'PAFFUTELLA',                imballi:[20,40,80]},
+  {id:'panzotta',      nome:'PANZOTTA',                  imballi:[26,52,112]},
+  {id:'choco',         nome:'BRIOSCIA al cioccolato',    imballi:[26,52,112]},
+  {id:'lat_mandorla',  nome:'Pasta Lattante Mandorla',   imballi:[10]},
+  {id:'lat_pistacchio',nome:'Pasta Lattante Pistacchio', imballi:[10]},
+  {id:'paste_mand6',   nome:'Paste di Mandorla (500g)',  imballi:[6]},
+  {id:'frutta_mart',   nome:'Frutta Martorana (200g)',   imballi:[12]},
+  {id:'occhio_bue',    nome:'Occhio di Bue',             imballi:[60]},
+  {id:'carlotta',      nome:'Carlotta (700g)',            imballi:[6]},
+];
+const LISTINO_NORD_DEFAULT = {
+  brioche:       {26:{pz:1.00,tot:28.60},  52:{pz:0.87,tot:49.76},  112:{pz:0.78,tot:96.10}},
+  mini:          {26:{pz:1.28,tot:36.61},  52:{pz:1.13,tot:64.64},  112:{pz:0.97,tot:119.50}},
+  paffutella:    {20:{pz:1.15,tot:25.30},  40:{pz:1.03,tot:45.32},  80:{pz:0.89,tot:78.32}},
+  panzotta:      {26:{pz:0.95,tot:27.17},  52:{pz:0.81,tot:46.33},  112:{pz:0.73,tot:89.94}},
+  choco:         {26:{pz:1.07,tot:30.61},  52:{pz:0.94,tot:53.77},  112:{pz:0.84,tot:103.49}},
+  lat_mandorla:  {10:{pz:15.35,tot:168.85}},
+  lat_pistacchio:{10:{pz:16.53,tot:181.83}},
+  paste_mand6:   {6: {pz:11.09,tot:73.19}},
+  frutta_mart:   {12:{pz:7.67, tot:101.24}},
+  occhio_bue:    {60:{pz:0.90, tot:59.40}},
+  carlotta:      {6: {pz:14.00,tot:92.40}},
+};
+let fasciaCorrente = 'nord';
+
+function mostraFascia(fascia, btn){
+  fasciaCorrente = fascia;
+  document.querySelectorAll('.listino-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderListinoTable();
+}
+
+function renderListinoTable(){
+  const tbody = document.getElementById('listini-body');
+  if(!tbody) return;
+  const listiniFascia = (cfg.listini && cfg.listini[fasciaCorrente]) || {};
+  let html = '';
+  LISTINO_PRODOTTI.forEach(prod => {
+    prod.imballi.forEach((imb,i) => {
+      const prezzi = (listiniFascia[prod.id] && listiniFascia[prod.id][imb]) || {};
+      const pz  = prezzi.pz  !== undefined ? prezzi.pz  : '';
+      const tot = prezzi.tot !== undefined ? prezzi.tot : '';
+      const nomeCell = i===0 ? `<td rowspan="${prod.imballi.length}" style="vertical-align:middle;font-weight:700;">${prod.nome}</td>` : '';
+      html += `<tr>${nomeCell}
+        <td style="color:var(--muted);font-family:monospace;">${imb} pz</td>
+        <td><input type="number" class="price-input" step="0.01" min="0"
+          data-prod="${prod.id}" data-imb="${imb}" data-tipo="pz"
+          value="${pz}" placeholder="0.00" oninput="aggiornaPrezzo(this)"></td>
+        <td><input type="number" class="tot-input" step="0.01" min="0"
+          data-prod="${prod.id}" data-imb="${imb}" data-tipo="tot"
+          value="${tot}" placeholder="0.00" oninput="aggiornaPrezzo(this)"></td>
+      </tr>`;
+    });
+    html += `<tr style="height:4px;"><td colspan="4" style="background:#f0ede8;padding:0;"></td></tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+function aggiornaPrezzo(input){
+  const prod=input.dataset.prod, imb=input.dataset.imb, tipo=input.dataset.tipo;
+  const val=parseFloat(input.value)||0;
+  if(!cfg.listini) cfg.listini={};
+  if(!cfg.listini[fasciaCorrente]) cfg.listini[fasciaCorrente]={};
+  if(!cfg.listini[fasciaCorrente][prod]) cfg.listini[fasciaCorrente][prod]={};
+  if(!cfg.listini[fasciaCorrente][prod][imb]) cfg.listini[fasciaCorrente][prod][imb]={};
+  cfg.listini[fasciaCorrente][prod][imb][tipo]=val;
+}
+
+function inizializzaListinoNord(){
+  if(!cfg.listini) cfg.listini={};
+  if(!cfg.listini.nord||Object.keys(cfg.listini.nord).length===0){
+    cfg.listini.nord=JSON.parse(JSON.stringify(LISTINO_NORD_DEFAULT));
+  }
+}
+
+
+// ══ CLIENTI E FASCE ══
+let clientiFasceAdmin = {}; // {piva: {nome, fascia}}
+const FASCIA_COLORS = {nord:'#2d5fa8',sud:'#2a6e42',sulposto:'#c49a2a',distr_nord:'#c84b2f',distr_sud:'#7e3bb5'};
+
+function aggiungiFascia(){
+  const piva = document.getElementById('cf-piva').value.trim().toUpperCase().replace(/\s/g,'');
+  const nome = document.getElementById('cf-nome').value.trim();
+  const fascia = document.getElementById('cf-fascia').value;
+  if(!piva || !fascia){ alert('Inserisci P.IVA e fascia.'); return; }
+  clientiFasceAdmin[piva] = {nome: nome || piva, fascia};
+  document.getElementById('cf-piva').value='';
+  document.getElementById('cf-nome').value='';
+  document.getElementById('cf-fascia').value='';
+  renderClientiFasce();
+  salvaClientiFasce();
+}
+
+function rimuoviFascia(piva){
+  if(!confirm('Rimuovere questo cliente dalla lista fasce?')) return;
+  delete clientiFasceAdmin[piva];
+  renderClientiFasce();
+  salvaClientiFasce();
+}
+
+function salvaClientiFasce(){
+  if(db){
+    // Salva in formato {piva: fascia} per il form clienti
+    const dataPerForm = {};
+    Object.entries(clientiFasceAdmin).forEach(([piva,d])=>{ dataPerForm[piva]=d.fascia; });
+    db.ref('ordini_siculabrioche/v1/clienti_fasce').set(dataPerForm)
+      .then(()=>{ document.getElementById('syncLbl').textContent='✓ Fasce salvate'; })
+      .catch(err=>alert('Errore salvataggio: '+err.message));
+  }
+}
+
+function renderClientiFasce(){
+  const q=(document.getElementById('cf-search')?.value||'').toLowerCase();
+  const tbody=document.getElementById('cf-tbody');
+  if(!tbody) return;
+  const entries=Object.entries(clientiFasceAdmin).filter(([piva,d])=>
+    !q||piva.toLowerCase().includes(q)||(d.nome||'').toLowerCase().includes(q)
+  );
+  document.getElementById('cf-count').textContent=entries.length+' clienti';
+  tbody.innerHTML=entries.map(([piva,d])=>{
+    const col=FASCIA_COLORS[d.fascia]||'#888';
+    return `<tr style="border-bottom:1px solid var(--line);">
+      <td style="padding:8px 12px;font-family:monospace;font-size:12px;">${piva}</td>
+      <td style="padding:8px 12px;">${d.nome||'—'}</td>
+      <td style="padding:8px 12px;"><span style="background:${col};color:#fff;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;">${d.fascia}</span></td>
+      <td style="padding:8px 12px;text-align:center;"><button onclick="rimuoviFascia('${piva}')" style="border:none;background:transparent;cursor:pointer;color:#c0392b;font-size:16px;">🗑</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" style="padding:20px;text-align:center;color:#aaa;font-style:italic;">Nessun cliente ancora</td></tr>';
+}
+
+function caricaCSVFasce(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const lines=e.target.result.split(/\r?\n/).filter(l=>l.trim());
+    let aggiunti=0;
+    lines.forEach(line=>{
+      const [piva,nome,fascia]=(line.split(/[,;\t]/).map(s=>s.trim().replace(/^["']|["']$/g,'')));
+      if(!piva||!fascia) return;
+      const pivaClean=piva.toUpperCase().replace(/\s/g,'');
+      if(pivaClean.length>2){
+        clientiFasceAdmin[pivaClean]={nome:nome||pivaClean,fascia:fascia.toLowerCase().replace(/\s/g,'_')};
+        aggiunti++;
+      }
+    });
+    renderClientiFasce();
+    salvaClientiFasce();
+    alert('✅ '+aggiunti+' clienti caricati dal CSV.');
+  };
+  reader.readAsText(file,'utf-8');
+  input.value='';
+}
+
+function caricaClientiFasceDB(){
+  if(!db) return;
+  db.ref('ordini_siculabrioche/v1/clienti_fasce').once('value',snap=>{
+    const data=snap.val()||{};
+    // Converte da {piva:fascia} a {piva:{nome,fascia}}
+    clientiFasceAdmin={};
+    Object.entries(data).forEach(([piva,fascia])=>{
+      clientiFasceAdmin[piva]={nome:piva,fascia};
+    });
+    renderClientiFasce();
+  });
+}
+
 </script>
 </body>
 </html>

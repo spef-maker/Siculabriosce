@@ -110,7 +110,25 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--paper);col
 
 .footer{text-align:center;padding:28px 16px 0;font-size:11px;color:#bbb;line-height:2;}
 .footer a{color:#bbb;text-decoration:none;}
+/* Prezzi */
+.prezzo-unitario{font-size:11px;color:var(--muted);font-family:monospace;margin-top:2px;}
+.totale-riga{font-size:12px;color:var(--green);font-weight:700;font-family:monospace;margin-top:2px;display:none;}
+.totale-riga.vis{display:block;}
+.totale-ordine-card{background:var(--white);border:2px solid var(--red);border-radius:var(--radius);padding:14px 18px;margin-bottom:14px;box-shadow:var(--shadow);}
+.totale-ordine-card h4{font-family:Georgia,serif;font-size:16px;font-weight:400;color:var(--red);margin-bottom:10px;}
+.tot-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0ede8;font-size:14px;}
+.tot-row:last-child{border-bottom:none;font-weight:700;font-size:16px;color:var(--red);}
+.fascia-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;color:#fff;margin-left:8px;vertical-align:middle;}
 .footer-logo{height:28px;opacity:.3;display:block;margin:0 auto 8px;}
+
+
+/* PREZZI */
+.prezzo-tag{font-size:11px;color:var(--red);font-family:monospace;font-weight:700;white-space:nowrap;}
+.prezzo-tot-live{font-size:12px;color:var(--green);font-family:monospace;font-weight:700;}
+.totale-ordine-card{background:var(--ink);color:#fff;border-radius:var(--radius);padding:16px 18px;margin-bottom:14px;}
+.totale-ordine-card .label{font-size:11px;opacity:.6;text-transform:uppercase;letter-spacing:1px;}
+.totale-ordine-card .importo{font-family:Georgia,serif;font-size:32px;font-weight:400;}
+.totale-ordine-card .sub{font-size:11px;opacity:.5;margin-top:4px;}
 
 /* Loading */
 .loading-screen{position:fixed;inset:0;background:var(--white);display:flex;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:14px;}
@@ -174,6 +192,13 @@ body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--paper);col
   <div class="info-box" id="benvenuto">Tocca un prodotto per espanderlo 👇</div>
   <div class="tot-strip" id="totStrip"><span>Prodotti selezionati</span><strong id="totCount">0</strong></div>
   <div id="prodList"></div>
+  <!-- Totale ordine con prezzi -->
+  <div class="totale-ordine-card" id="totale-ordine-card" style="display:none;">
+    <div class="label">Totale ordine stimato</div>
+    <div class="importo" id="tot-importo">€ 0,00</div>
+    <div class="sub" id="tot-iva">IVA inclusa 10%</div>
+  </div>
+
   <div class="warn-box" id="warn2"></div>
   <button class="btn btn-red" onclick="goStep(3)">Avanti — Riepilogo ordine ✓</button>
   <button class="btn btn-ghost" onclick="goStep(1)">← Torna indietro</button>
@@ -217,6 +242,68 @@ const DEF_CFG = {
   tel:'(+39) 095 805734', addr:'Acireale (CT)',
   prodotti:{}
 };
+
+
+// ══ FASCIA CLIENTE E PREZZI ══
+// Mappa P.IVA → fascia (caricata da Firebase)
+let clientiFasce = {}; // {piva: 'nord'} ecc.
+let fasciaCliente = null;
+let listiniCfg = {};  // listini da Firebase
+
+function getPrezzoImballo(prodId, imb){
+  if(!fasciaCliente || !listiniCfg[fasciaCliente]) return null;
+  const listino = listiniCfg[fasciaCliente];
+  return (listino[prodId] && listino[prodId][imb]) ? listino[prodId][imb] : null;
+}
+
+function trovaFasciaCliente(piva){
+  // Cerca per P.IVA normalizzata
+  const pivaClean = piva.toUpperCase().replace(/\s/g,'').replace(/^IT/,'');
+  // Prima cerca con IT prefisso, poi senza
+  return clientiFasce['IT'+pivaClean] || clientiFasce[pivaClean] || clientiFasce[piva] || null;
+}
+
+function aggiornaTotaleOrdine(){
+  let totaleImponibile = 0;
+  let totaleIvato = 0;
+  let hasPrezzi = false;
+
+  document.querySelectorAll('.qty-row').forEach(row=>{
+    const v = parseInt(row.querySelector('input').value)||0;
+    if(!v) return;
+    const prodId = row.dataset.prodrow || '';
+    const pz = +row.dataset.pz || 1;
+    const imb = row.dataset.imb || '';
+
+    // Trova il prodotto per ricavare l'id categoria
+    // Il prodId può essere 'lat_mandorla', 'brioche', ecc.
+    const prezzi = getPrezzoImballo(prodId, +imb) || getPrezzoImballo(prodId, imb);
+    const totEl = row.querySelector('.prezzo-tot-live');
+
+    if(prezzi && prezzi.tot){
+      hasPrezzi = true;
+      const subtot = prezzi.tot * v;
+      totaleIvato += subtot;
+      totaleImponibile += subtot / 1.10; // IVA 10%
+      if(totEl) totEl.textContent = '€' + (subtot).toFixed(2);
+    } else {
+      if(totEl) totEl.textContent = '';
+    }
+  });
+
+  const totCard = document.getElementById('totale-ordine-card');
+  if(totCard){
+    if(hasPrezzi && totaleIvato > 0){
+      totCard.style.display = 'block';
+      document.getElementById('tot-importo').textContent = '€ ' + totaleIvato.toFixed(2);
+      document.getElementById('tot-iva').textContent = 'IVA incl. · Imponibile € ' + totaleImponibile.toFixed(2);
+    } else {
+      totCard.style.display = 'none';
+    }
+  }
+
+  return totaleIvato;
+}
 
 const PRODOTTI_DEF = [
   // 1. BRIOSCIA
@@ -287,6 +374,44 @@ PRODOTTI_DEF.forEach(p=>{
 });
 
 let CFG = Object.assign({}, DEF_CFG);
+
+// ── Listini prezzi ──
+let LISTINI = {};       // {nord:{brioche_26:1.00,...}, sud:{...}}
+let CLIENTI_FASCE = {}; // {IT12345678901:'nord', ...}
+let FASCIA_CORRENTE = null; // fascia del cliente corrente
+
+const FASCE_INFO = {
+  nord:     {nome:'Nord',             colore:'#1565a8'},
+  sud:      {nome:'Sud',              colore:'#c84b2f'},
+  sulposto: {nome:'Sul Posto',        colore:'#2a6e42'},
+  dist_nord:{nome:'Distributore Nord',colore:'#7e3bb5'},
+  dist_sud: {nome:'Distributore Sud', colore:'#b87c1a'},
+};
+
+// Mappa chiave listino → {prodId, imballo}
+const KEY_TO_PROD = {
+  brioche_26:{id:'brioche',imb:26}, brioche_52:{id:'brioche',imb:52}, brioche_112:{id:'brioche',imb:112},
+  mini_26:{id:'mini',imb:26}, mini_52:{id:'mini',imb:52}, mini_112:{id:'mini',imb:112},
+  choco_26:{id:'choco',imb:26}, choco_52:{id:'choco',imb:52}, choco_112:{id:'choco',imb:112},
+  paffutella_20:{id:'paffutella',imb:20}, paffutella_40:{id:'paffutella',imb:40}, paffutella_80:{id:'paffutella',imb:80},
+  panzotta_26:{id:'panzotta',imb:26}, panzotta_52:{id:'panzotta',imb:52}, panzotta_112:{id:'panzotta',imb:112},
+  lat_mandorla_kg:{id:'lat',sub:'lat_mandorla'}, lat_pistacchio_kg:{id:'lat',sub:'lat_pistacchio'},
+  paste_mand6:{id:'paste',sub:'paste_mand6'}, frutta_mart:{id:'varie',sub:'frutta_mart'},
+  carlotta_6:{id:'varie',sub:'carlotta_6'}, occhio_bue_60:{id:'varie',sub:'occhio_bue_60'},
+};
+
+function getPrezzoRiga(prodId, imb){
+  if(!FASCIA_CORRENTE || !LISTINI[FASCIA_CORRENTE]) return null;
+  const prezzi = LISTINI[FASCIA_CORRENTE];
+  // Cerca la chiave che corrisponde a questo prodotto+imballo
+  for(const [key, info] of Object.entries(KEY_TO_PROD)){
+    if((info.id === prodId || info.sub === prodId) &&
+       (info.imb === imb || info.imb === +imb)){
+      return prezzi[key] || null;
+    }
+  }
+  return null;
+}
 let cc = null;
 const SK = 'sicbr_v3';
 
@@ -318,10 +443,36 @@ const firebaseConfig = {
   try{
     if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    // Carica listini e fascia cliente in parallelo
+    let listiniData = null, clientiFasceData = null;
+    db.ref('ordini_siculabrioche/v1/listini').once('value', snap=>{
+      listiniData = snap.val() || {};
+      LISTINI = listiniData;
+    });
+    db.ref('ordini_siculabrioche/v1/clienti_fasce').once('value', snap=>{
+      clientiFasceData = snap.val() || {};
+      CLIENTI_FASCE = clientiFasceData;
+      // Imposta fascia cliente se già loggato
+      if(cc && cc.piva && CLIENTI_FASCE[cc.piva]){
+        FASCIA_CORRENTE = CLIENTI_FASCE[cc.piva];
+      }
+    });
+    // Carica fasce clienti
+    db.ref('ordini_siculabrioche/v1/clienti_fasce').once('value', snap2=>{
+      clientiFasce = snap2.val() || {};
+      // Aggiorna fascia se cliente già loggato
+      if(cc && cc.piva){
+        fasciaCliente = trovaFasciaCliente(cc.piva);
+      }
+    });
+
     db.ref('ordini_siculabrioche/v1/form_config').once('value', snap=>{
       const data = snap.val();
       if(data) CFG = Object.assign({}, DEF_CFG, data);
       if(data && data.prodotti) CFG.prodotti = data.prodotti;
+      if(data && data.listini){ listiniCfg = data.listini; }
+      // Aggiorna fascia cliente ora che abbiamo i listini
+      if(cc && cc.piva){ fasciaCliente = trovaFasciaCliente(cc.piva) || cc.fascia || null; }
       applicaCfg();
     }).catch(()=>{ applicaCfg(); });
   }catch(e){ applicaCfg(); }
@@ -394,12 +545,18 @@ function buildProdotti(){
          <div class="cat-img-ph" style="display:none;background:${sfondo};">${p.emoji}</div>`
       : `<div class="cat-img-ph" style="background:${sfondo};">${p.emoji}</div>`;
 
-    // Righe quantità
+    // Righe quantità con prezzi
     const righeHtml = p.imballi.map(i=>{
       const rowId = i.prodId || `${p.id}-${i.imb}`;
       const subHtml = i.sub ? `<small>${i.sub}</small>` : '';
-      return `<div class="qty-row" data-prodrow="${rowId}" data-pz="${i.pz}">
-        <div class="qty-label">${i.label}${subHtml}</div>
+      // Cerca prezzo per questo prodotto+imballo
+      const prodIdPrezz = i.prodId || p.id;
+      const prezzo = getPrezzoRiga(prodIdPrezz, i.imb || i.pz);
+      const prezzoHtml = prezzo
+        ? `<div class="prezzo-unitario">€ ${prezzo.toFixed(2)}/pz · Totale: <span class="tot-riga-${rowId}">€ ${(prezzo*i.pz*(1.1)).toFixed(2)}</span></div>`
+        : '';
+      return `<div class="qty-row" data-prodrow="${rowId}" data-pz="${i.pz}" data-prezzo="${prezzo||0}">
+        <div class="qty-label">${i.label}${subHtml}${prezzoHtml}</div>
         <div class="qty-ctrl">
           <button onclick="cq(this,-1)">−</button>
           <input type="number" min="0" value="0" oninput="sq(this)">
@@ -549,7 +706,20 @@ function tC(h){h.classList.toggle('open');h.nextElementSibling.classList.toggle(
 
 // ══ QUANTITÀ ══
 function cq(b,d){const i=b.parentElement.querySelector('input');i.value=Math.max(0,(parseInt(i.value)||0)+d);sq(i);}
-function sq(i){const v=parseInt(i.value)||0;i.closest('.qty-row').classList.toggle('has-value',v>0);uB();uT();}
+function sq(i){
+  const v=parseInt(i.value)||0;
+  const row=i.closest('.qty-row');
+  row.classList.toggle('has-value',v>0);
+  // Aggiorna totale riga se ha prezzo
+  const prezzo=parseFloat(row.dataset.prezzo)||0;
+  const pz=parseInt(row.dataset.pz)||1;
+  if(prezzo>0){
+    const rowId=row.dataset.prodrow;
+    const elTot=row.querySelector('.tot-riga-'+rowId);
+    if(elTot) elTot.textContent='€ '+(prezzo*pz*v*1.1).toFixed(2);
+  }
+  uB();uT();aggiornaRiepilogoTotale();
+}
 
 function uB(){
   // Resetta badge
@@ -571,6 +741,21 @@ function uB(){
 
 function uT(){const t=gP().length;const s=document.getElementById('totStrip');s.style.display=t>0?'flex':'none';document.getElementById('totCount').textContent=t+(t===1?' prodotto':' prodotti');}
 function hP(){return[...document.querySelectorAll('.qty-row input')].some(i=>(parseInt(i.value)||0)>0);}
+
+function aggiornaRiepilogoTotale(){
+  if(!FASCIA_CORRENTE) return;
+  const strip = document.getElementById('totStrip');
+  const count = document.getElementById('totCount');
+  const prodotti = gP();
+  if(!prodotti.length){ strip.style.display='none'; return; }
+  let totale=0;
+  prodotti.forEach(p=>{
+    const prezzo=parseFloat(document.querySelector(`.qty-row[data-prodrow="${p.rowId}"]`)?.dataset.prezzo)||0;
+    if(prezzo>0) totale+=prezzo*p.pz*p.qty*1.1;
+  });
+  strip.style.display='flex';
+  count.textContent = prodotti.length+(prodotti.length===1?' prodotto':' prodotti')+(totale>0?'  —  Totale: € '+totale.toFixed(2):'');
+}
 
 function gP(){
   const l=[];
@@ -605,8 +790,16 @@ function goStep(n){
       cc={piva:p.toUpperCase().replace(/\s/g,''),nome:nm.toUpperCase(),email:document.getElementById('f-email').value.trim(),tel:document.getElementById('f-tel').value.trim()};
       sC(cc);
     }
+    // Imposta fascia cliente
+    const pivaClean = cc.piva.toUpperCase().replace(/\s/g,'');
+    FASCIA_CORRENTE = CLIENTI_FASCE[pivaClean] || null;
     const n1=cc.nome.split(/[\s,]+/)[0];
-    document.getElementById('benvenuto').innerHTML=`Ciao <strong>${n1}</strong>! 👋 ${CFG.welcomeTxt||DEF_CFG.welcomeTxt}`;
+    const fasciaHtml = FASCIA_CORRENTE && FASCE_INFO[FASCIA_CORRENTE]
+      ? ` <span class="fascia-badge" style="background:${FASCE_INFO[FASCIA_CORRENTE].colore};">${FASCE_INFO[FASCIA_CORRENTE].nome}</span>`
+      : '';
+    document.getElementById('benvenuto').innerHTML=`Ciao <strong>${n1}</strong>!${fasciaHtml} 👋 ${CFG.welcomeTxt||DEF_CFG.welcomeTxt}`;
+    // Ricostruisci prodotti con i prezzi
+    buildProdotti();
   }
   if(n===3){if(!hP()){mW('warn2','⚠️ Seleziona almeno un prodotto per continuare.');return;}hW('warn2');bR();}
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -622,13 +815,53 @@ function bR(){
   if(cc.piva){document.getElementById('rPivaTxt').textContent=cc.piva;document.getElementById('rPiva').style.display='';}
   const ct=[cc.email,cc.tel].filter(Boolean).join(' · ');
   if(ct){document.getElementById('rContTxt').textContent=ct;document.getElementById('rCont').style.display='';}
+
+  // Calcola totali con prezzi
+  let totaleImponibile=0, totalePezzi=0;
+  const hasPrezzi = FASCIA_CORRENTE && LISTINI[FASCIA_CORRENTE];
+
   document.getElementById('rProd').innerHTML=pr.map(p=>{
     const u=p.pz===1?`${p.qty} pz`:`${p.qty} imb. da ${p.label.match(/\d+/)?.[0]||'?'}`;
-    return `<div class="recap-row"><span>${p.nome}</span><span class="recap-qty">${u}</span></div>`;
+    const prezzo=parseFloat(document.querySelector(`.qty-row[data-prodrow="${p.rowId}"]`)?.dataset.prezzo)||0;
+    const rigaTot=prezzo>0?prezzo*p.pz*p.qty:0;
+    totaleImponibile+=rigaTot;
+    totalePezzi+=p.qty*p.pz;
+    const prezzoHtml=prezzo>0
+      ? `<span style="font-size:11px;color:var(--muted);margin-left:6px;">€${prezzo.toFixed(2)}/pz</span>`:'';
+    const totHtml=rigaTot>0
+      ? `<span class="recap-qty">€ ${(rigaTot*1.1).toFixed(2)}</span>`
+      : `<span class="recap-qty">${u}</span>`;
+    return `<div class="recap-row"><span>${p.nome}${prezzoHtml}</span>${totHtml}</div>`;
   }).join('');
-  const tot=pr.reduce((a,p)=>a+p.qty*p.pz,0);
+
+  // Card totale con IVA
+  let totaleCardHtml='';
+  if(hasPrezzi && totaleImponibile>0){
+    const iva=totaleImponibile*0.10;
+    const totIva=totaleImponibile+iva;
+    totaleCardHtml=`
+    <div class="totale-ordine-card">
+      <h4>💶 Totale ordine</h4>
+      <div class="tot-row"><span>Imponibile</span><span>€ ${totaleImponibile.toFixed(2)}</span></div>
+      <div class="tot-row"><span>IVA 10%</span><span>€ ${iva.toFixed(2)}</span></div>
+      <div class="tot-row"><span>TOTALE</span><span>€ ${totIva.toFixed(2)}</span></div>
+    </div>`;
+  }
+
+  // Inserisci card totale prima del messaggio
+  const msgCard=document.querySelector('.msg-card');
+  let totCard=document.getElementById('totaleOrdineCard');
+  if(!totCard){
+    totCard=document.createElement('div');totCard.id='totaleOrdineCard';
+    msgCard.parentNode.insertBefore(totCard,msgCard);
+  }
+  totCard.innerHTML=totaleCardHtml;
+
+  const tot=totalePezzi;
+  const fasciaLabel=FASCIA_CORRENTE&&FASCE_INFO[FASCIA_CORRENTE]?`\nFascia: ${FASCE_INFO[FASCIA_CORRENTE].nome}`:'';
   const r=pr.map(p=>p.pz===1?`  - ${p.qty} pz di ${p.nome}`:`  - ${p.qty} imballo/i di ${p.nome}`).join('\n');
-  const msg=`===ORDINE SICULABRIOSCE===\nCliente: ${cc.nome}\nP.IVA/Cod: ${cc.piva}\n${cc.email?'Email: '+cc.email+'\n':''}${cc.tel?'Tel/WA: '+cc.tel+'\n':''}\nPRODOTTI:\n${r}\n\nTotale stimato: ~${tot} pz\n===FINE ORDINE===`;
+  const totaleMsg=hasPrezzi&&totaleImponibile>0?`\n\nTOTALE IVA INCLUSA: € ${(totaleImponibile*1.1).toFixed(2)}`:`\nTotale pezzi: ~${tot}`;
+  const msg=`===ORDINE SICULABRIOSCE===\nCliente: ${cc.nome}\nP.IVA/Cod: ${cc.piva}${fasciaLabel}\n${cc.email?'Email: '+cc.email+'\n':''}${cc.tel?'Tel/WA: '+cc.tel+'\n':''}\nPRODOTTI:\n${r}${totaleMsg}\n===FINE ORDINE===`;
   document.getElementById('msgTxt').textContent=msg;
 }
 
