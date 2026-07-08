@@ -2326,8 +2326,8 @@ function initFirebase(){
       setSyncStatus('saving','Salvataggio…');
       if(saveDebounce) clearTimeout(saveDebounce);
       saveDebounce = setTimeout(()=>{
+        if(isRemoteUpdate){ saveDebounce=null; return; } // doppio check
         isSaving = true;
-        // Salva solo la sessione corrente + clienti, non sovrascrive tutto
         const updates = {};
         updates[`ordini_siculabrioche/v1/clients`] = clients;
         if(currentSession && orders[currentSession]){
@@ -2335,8 +2335,8 @@ function initFirebase(){
         }
         db.ref().update(updates)
           .then(()=>{ setSyncStatus('ok','Sincronizzato ✓'); isSaving=false; saveDebounce=null; })
-          .catch(()=>{ setSyncStatus('err','Errore sync'); isSaving=false; });
-      }, 300);
+          .catch(e=>{ console.error('Firebase update error:', e); setSyncStatus('err','Errore sync'); isSaving=false; saveDebounce=null; });
+      }, 2000); // 2 secondi — evita salvataggi troppo frequenti con più utenti
     };
 
     let firstLoad = true;
