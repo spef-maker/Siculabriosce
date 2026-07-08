@@ -2306,12 +2306,12 @@ function loadLocal(){
 }
 
 function safeSetFirebase(){
+  // Non usare questo per il salvataggio normale — usare notifyChange
   if(!db) return;
   const hasData = Object.keys(orders).some(k=>(orders[k].rows||[]).length > 0) || clients.length > 0;
-  if(!hasData){ console.warn('BLOCCO: dati vuoti, non salvo su Firebase'); return; }
+  if(!hasData){ return; }
   db.ref('ordini_siculabrioche/v1').set({orders, clients})
-    .then(()=>{ setSyncStatus('ok','Salvato ✓'); })
-    .catch(e=>{ console.error('Firebase set error:', e); setSyncStatus('err','Errore salvataggio'); });
+    .catch(e=>{ console.error('Firebase set error:', e); });
 }
 
 function initFirebase(){
@@ -2319,6 +2319,7 @@ function initFirebase(){
     if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     db = firebase.database();
 
+    // ── notifyChange: salva SOLO la sessione corrente, non tutto ──
     notifyChange = ()=>{
       if(isRemoteUpdate) return;
       cleanEmptySessions();
@@ -2326,26 +2327,28 @@ function initFirebase(){
       setSyncStatus('saving','Salvataggio…');
       if(saveDebounce) clearTimeout(saveDebounce);
       saveDebounce = setTimeout(()=>{
-        if(isRemoteUpdate){ saveDebounce=null; return; } // doppio check
+        if(isRemoteUpdate){ saveDebounce=null; return; }
+        if(!currentSession || !orders[currentSession]) { saveDebounce=null; return; }
         isSaving = true;
+        // Salva SOLO la sessione corrente e i clienti — mai sovrascrivere le altre sessioni
+        const sesData = orders[currentSession];
         const updates = {};
-        updates[`ordini_siculabrioche/v1/clients`] = clients;
-        if(currentSession && orders[currentSession]){
-          updates[`ordini_siculabrioche/v1/orders/${currentSession}`] = orders[currentSession];
-        }
+        updates['ordini_siculabrioche/v1/clients'] = clients;
+        updates['ordini_siculabrioche/v1/orders/' + currentSession] = sesData;
         db.ref().update(updates)
-          .then(()=>{ setSyncStatus('ok','Sincronizzato ✓'); isSaving=false; saveDebounce=null; })
+          .then(()=>{ setSyncStatus('ok','Salvato ✓'); isSaving=false; saveDebounce=null; })
           .catch(e=>{ console.error('Firebase update error:', e); setSyncStatus('err','Errore sync'); isSaving=false; saveDebounce=null; });
-      }, 2000); // 2 secondi — evita salvataggi troppo frequenti con più utenti
+      }, 2000);
     };
 
+    // ── Listener: ascolta cambiamenti da altre colleghe ──
     let firstLoad = true;
 
     db.ref('ordini_siculabrioche/v1').on('value', snap=>{
-      // Durante un nostro salvataggio ignora l'echo
+      // Se stiamo salvando, ignora l'eco del nostro stesso salvataggio
       if(isSaving || saveDebounce){
         document.getElementById('loading').classList.remove('vis');
-        setSyncStatus('ok','Sincronizzato ✓');
+        setSyncStatus('ok','Salvato ✓');
         return;
       }
 
@@ -2353,104 +2356,84 @@ function initFirebase(){
 
       if(firstLoad){
         firstLoad = false;
-        if(data && (data.orders || data.clients)){
-          // Firebase ha dati → usa quelli
+        document.getElementById('loading').classList.remove('vis');
+
+        if(data && data.orders && Object.keys(data.orders).length > 0){
+          // Firebase ha dati → carica quelli
           isRemoteUpdate = true;
           if(data.clients && Array.isArray(data.clients)) clients = data.clients;
-          if(data.orders) orders = data.orders;
+          // Merge intelligente: mantieni le sessioni locali non presenti in Firebase
+          Object.keys(data.orders).forEach(k=>{ orders[k] = data.orders[k]; });
           saveLocal();
           setTimeout(()=>{ isRemoteUpdate=false; }, 0);
-          // Pulisci sessioni vuote e risalva su Firebase
-          const vuotePrima = Object.keys(orders).filter(k=>!(orders[k].rows||[]).length && k!==currentSession);
-          if(vuotePrima.length){
-            vuotePrima.forEach(k=>delete orders[k]);
-            saveLocal();
+        } else if(data === null || !data.orders){
+          // Firebase vuoto → carica dati locali se esistono
+          const hasLocal = Object.keys(orders).some(k=>(orders[k].rows||[]).length > 0);
+          if(hasLocal){
+            setSyncStatus('saving','Caricamento su Firebase…');
             safeSetFirebase();
           }
-        } else {
-          // Firebase vuoto → carica i dati locali
-          const hasLocalData = Object.keys(orders).length > 0 || clients.length > 0;
-          if(hasLocalData){
-            setSyncStatus('saving','Caricamento dati su Firebase…');
-            safeSetFirebase()
-              .then(()=>setSyncStatus('ok','Dati caricati ✓'))
-              .catch(()=>setSyncStatus('err','Errore caricamento'));
-          }
         }
-      } else {
-        // Aggiornamento da un'altra persona
-        // PROTEZIONE: non sovrascrivere se Firebase ha meno dati di quelli locali
-        if(data && data.orders){
-          const remoteSessionCount = Object.keys(data.orders).length;
-          const localSessionCount = Object.keys(orders).length;
-          const remoteTotalRows = Object.values(data.orders).reduce((s,x)=>s+(x.rows||[]).length,0);
-          const localTotalRows = Object.values(orders).reduce((s,x)=>s+(x.rows||[]).length,0);
-
-          if(remoteTotalRows < localTotalRows * 0.5 && localTotalRows > 10){
-            // Firebase ha meno della metà dei dati locali → probabile cancellazione accidentale, ignora
-            console.warn(`PROTEZIONE DATI: Firebase ha ${remoteTotalRows} righe, locale ha ${localTotalRows} — ignoro aggiornamento`);
-            setSyncStatus('err','⚠️ Aggiornamento sospetto bloccato');
-            setTimeout(()=>{ isRemoteUpdate=false; }, 0);
-          } else {
-            isRemoteUpdate = true;
-            if(data.clients && Array.isArray(data.clients)) clients = data.clients;
-            if(data.orders) orders = data.orders;
-            const vuote = Object.keys(orders).filter(k=>!(orders[k].rows||[]).length && k!==currentSession);
-            vuote.forEach(k=>delete orders[k]);
-            saveLocal();
-            setTimeout(()=>{ isRemoteUpdate=false; }, 0);
-          }
-        } else if(!data){
-          // Firebase è diventato null — BLOCCA, potrebbe essere cancellazione accidentale
-          console.warn('PROTEZIONE: Firebase restituisce null, dati locali preservati');
-          setSyncStatus('err','⚠️ Firebase vuoto — dati locali preservati');
-          setTimeout(()=>{ isRemoteUpdate=false; }, 0);
-        }
-      }
-
-      document.getElementById('loading').classList.remove('vis');
-      setSyncStatus('ok','Connesso ✓');
-      ensureSession();
-      renderSessionSelector();
-
-      // Re-render solo se non stai digitando in una cella
-      const activeEl = document.activeElement;
-      const isTyping = activeEl && (activeEl.classList.contains('qty-input') ||
-                                     activeEl.classList.contains('meta-input') ||
-                                     activeEl.classList.contains('note-input') ||
-                                     activeEl.classList.contains('ac-input'));
-      if(!isTyping){
+        setSyncStatus('ok','Connesso ✓');
+        cleanEmptySessions();
+        ensureSession();
+        renderSessionSelector();
         renderGrid();
         renderProduzione();
         renderAnagrafica();
         updateBriocheCounter();
-      } else {
-        // Aggiorna solo i totali senza distruggere il DOM
-        setSyncStatus('ok','Connesso ✓ (aggiornamento in attesa…)');
-        // Quando l'utente finisce di digitare, aggiorna
-        const waitForBlur = ()=>{
+        return;
+      }
+
+      // Aggiornamento da collega: merge per sessione senza distruggere le nostre
+      if(data && data.orders){
+        isRemoteUpdate = true;
+        if(data.clients && Array.isArray(data.clients)) clients = data.clients;
+
+        // Aggiorna solo le sessioni cambiate, preserva la sessione corrente locale
+        Object.keys(data.orders).forEach(k=>{
+          if(k === currentSession) return; // non sovrascrivere MAI la sessione attiva
+          orders[k] = data.orders[k];
+        });
+
+        // Rimuovi sessioni che non esistono più in Firebase (eccetto quella corrente)
+        Object.keys(orders).forEach(k=>{
+          if(k === currentSession) return;
+          if(!data.orders[k]) delete orders[k];
+        });
+
+        saveLocal();
+        setTimeout(()=>{ isRemoteUpdate=false; }, 0);
+
+        // Aggiorna UI solo se non stiamo digitando
+        const activeEl = document.activeElement;
+        const isTyping = activeEl && (
+          activeEl.classList.contains('qty-input') ||
+          activeEl.classList.contains('meta-input') ||
+          activeEl.classList.contains('pers-input')
+        );
+        if(!isTyping){
+          renderSessionSelector();
           renderGrid();
-          renderProduzione();
-          updateBriocheCounter();
-          activeEl.removeEventListener('blur', waitForBlur);
-        };
-        activeEl.addEventListener('blur', waitForBlur);
+        }
+        setSyncStatus('ok','Connesso ✓');
       }
 
     }, err=>{
-      console.warn('Firebase error:', err);
+      console.error('Firebase listener error:', err);
       document.getElementById('loading').classList.remove('vis');
       setSyncStatus('err','Offline · dati locali');
       fallbackInit();
     });
 
   } catch(e){
-    console.warn('Firebase init error:', e);
+    console.error('Firebase init error:', e);
     document.getElementById('loading').classList.remove('vis');
     setSyncStatus('err','Offline · dati locali');
     fallbackInit();
   }
 }
+
 
 function fallbackInit(){
   notifyChange = ()=>{ cleanEmptySessions(); saveLocal(); setSyncStatus('ok','Salvato localmente ✓'); };
