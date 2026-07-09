@@ -2092,7 +2092,8 @@ function renderConfezionamento(){
       const isEstero = ESTERO_PERS.includes(persLower);
       const hasPers = row.pers && row.pers.trim() && !isEstero;
       PRODUCTS.forEach(p=>{
-        if(p.id === 'romanamini') return; // gestita separatamente sotto
+        // Questi prodotti sono sempre neutri — gestiti separatamente sotto
+        if(['romanamini','romana','romanachoco'].includes(p.id)) return;
         p.imballi.forEach(imb=>{
           const v = parseInt((row.qtys||{})[p.id]?.[imb]||0);
           if(v === 0) return;
