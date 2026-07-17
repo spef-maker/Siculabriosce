@@ -7,1433 +7,924 @@
 <style>
   :root{
     --ink:#1f2421;
-    --paper:#f7f5f1;
-    --line:#d8d3c8;
-    --line-strong:#b8b0a2;
-    --accent:#b5563c;
-    --lavora:#ffffff;
-    --riposo:#cfc9bd;
-    --riposo-strong:#9a9285;
-    --ferie:#e8cdb8;
-    --ferie-strong:#b5563c;
-    --ok:#7d9c70;
-    --warn:#b5563c;
-    --muted:#8a857c;
+    --paper:#f8f6f2;
     --white:#ffffff;
-    --radius:6px;
-    --font-display:'DM Serif Display', Georgia, serif;
-    --font-body:'Inter', -apple-system, sans-serif;
-    --font-mono:'IBM Plex Mono', monospace;
+    --accent:#b5563c;
+    --ok:#3a7a3a;
+    --warn:#b5563c;
+    --muted:#888;
+    --line:#e0dbd4;
+    --line-strong:#c8c2ba;
+    --riposo:#cfc9bd;
+    --riposo-strong:#7a7268;
+    --ferie:#e8c89a;
+    --ferie-strong:#8a6020;
+    --font-sans:'Helvetica Neue',Arial,sans-serif;
+    --font-mono:'Courier New',monospace;
   }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--font-sans);background:var(--paper);color:var(--ink);font-size:13px;line-height:1.4;}
+  .app{max-width:100%;padding:16px;}
 
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:var(--font-body);
-    color:var(--ink);
-    background:var(--paper);
-    font-size:13px;
-    line-height:1.45;
-  }
-
-  .app{
-    max-width:1400px;
-    margin:0 auto;
-    padding:28px 24px 60px;
-  }
-
-  header.top{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-end;
-    border-bottom:2px solid var(--ink);
-    padding-bottom:14px;
-    margin-bottom:24px;
-    flex-wrap:wrap;
-    gap:12px;
-  }
-  header.top h1{
-    font-family:var(--font-display);
-    font-size:30px;
-    margin:0;
-    font-weight:400;
-    letter-spacing:0.5px;
-  }
-  header.top .sub{
-    font-family:var(--font-mono);
-    font-size:11px;
-    color:var(--muted);
-    text-transform:uppercase;
-    letter-spacing:1.5px;
-  }
-
-  .month-nav{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    font-family:var(--font-mono);
-    flex-wrap:wrap;
-  }
-  .month-nav .label{
-    font-size:12px;
-    text-transform:uppercase;
-    letter-spacing:1px;
-    color:var(--muted);
-    font-weight:600;
-    white-space:nowrap;
-  }
-  .range-label{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    font-family:var(--font-mono);
-    font-size:11px;
-    text-transform:uppercase;
-    letter-spacing:1px;
-    color:var(--muted);
-  }
-  .range-label input[type="date"]{
-    font-family:var(--font-body);
-    font-size:13px;
-    padding:6px 8px;
-    border:1px solid var(--line-strong);
-    border-radius:4px;
-    background:var(--white);
-    color:var(--ink);
-  }
-
-  .toolbar{
-    display:flex;
-    gap:8px;
-    margin-bottom:18px;
-    flex-wrap:wrap;
-    align-items:center;
-  }
-  .toolbar button{
-    border:1px solid var(--line-strong);
-    background:var(--white);
-    color:var(--ink);
-    padding:8px 14px;
-    border-radius:4px;
-    font-size:13px;
-    font-weight:600;
-    cursor:pointer;
-  }
+  /* TOOLBAR */
+  .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 14px;border-bottom:2px solid var(--ink);margin-bottom:16px;}
+  .toolbar h1{font-size:18px;font-weight:800;letter-spacing:-.5px;margin-right:8px;}
+  .toolbar .sub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-right:16px;}
+  .month-nav{display:flex;align-items:center;gap:6px;}
+  .month-nav label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  .month-nav input[type="date"]{font-family:var(--font-mono);font-size:12px;border:1px solid var(--line-strong);border-radius:3px;padding:3px 6px;background:var(--white);}
+  .month-nav .days-count{font-family:var(--font-mono);font-size:11px;color:var(--muted);padding:0 4px;}
+  .toolbar button{font-family:var(--font-sans);font-size:12px;border:1px solid var(--line-strong);border-radius:3px;padding:5px 10px;background:var(--white);cursor:pointer;color:var(--ink);}
   .toolbar button:hover{background:var(--ink);color:var(--white);}
   .toolbar button.primary{background:var(--ink);color:var(--white);border-color:var(--ink);}
   .toolbar button.primary:hover{background:var(--accent);border-color:var(--accent);}
-  .toolbar .file-label{
-    display:inline-block;
-    border:1px solid var(--line-strong);
-    background:var(--white);
-    color:var(--ink);
-    padding:8px 14px;
-    border-radius:4px;
-    font-size:13px;
-    font-weight:600;
-    cursor:pointer;
-    font-family:var(--font-body);
-  }
+  .toolbar .file-label{font-family:var(--font-sans);font-size:12px;border:1px solid var(--line-strong);border-radius:3px;padding:5px 10px;background:var(--white);cursor:pointer;color:var(--ink);}
   .toolbar .file-label:hover{background:var(--ink);color:var(--white);}
-  .toolbar #importFile{
-    position:absolute;
-    width:1px;
-    height:1px;
-    padding:0;
-    margin:0;
-    overflow:hidden;
-    clip:rect(0,0,0,0);
-    white-space:nowrap;
-    border:0;
-  }
-  .status-msg{
-    font-family:var(--font-mono);
-    font-size:11px;
-    color:var(--accent);
-    margin-left:auto;
-  }
+  .toolbar .sync-status{font-size:11px;color:var(--ok);margin-left:auto;}
 
-  /* DEPARTMENT BLOCK */
-  .dept-block{
-    background:var(--white);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    margin-bottom:28px;
-    overflow:hidden;
-  }
-  .dept-header{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:12px 16px;
-    background:var(--ink);
-    color:var(--white);
-  }
-  .dept-header input.dept-name{
-    font-family:var(--font-display);
-    font-size:18px;
-    background:transparent;
-    border:none;
-    color:var(--white);
-    flex:1;
-    padding:2px 4px;
-    border-radius:3px;
-  }
-  .dept-header input.dept-name:focus{outline:1px solid var(--white);}
-  .dept-header button{
-    background:transparent;
-    border:1px solid rgba(255,255,255,0.35);
-    color:var(--white);
-    padding:5px 10px;
-    border-radius:4px;
-    font-size:11px;
-    font-family:var(--font-mono);
-    text-transform:uppercase;
-    letter-spacing:1px;
-    cursor:pointer;
-    white-space:nowrap;
-  }
-  .dept-header button:hover{background:var(--accent);border-color:var(--accent);}
-  .dept-header button.del-dept{
-    border-color:rgba(255,255,255,0.2);
-  }
-  .dept-header button.del-dept:hover{background:#a1392a;border-color:#a1392a;}
-
-  .grid-wrap{overflow-x:auto;}
-  table.roster{
-    border-collapse:collapse;
-    width:100%;
-    min-width:900px;
-  }
-  table.roster th, table.roster td{
-    border:1px solid var(--line);
-    padding:0;
-    text-align:center;
-  }
-  table.roster th{
-    font-family:var(--font-mono);
-    font-size:10px;
-    text-transform:uppercase;
-    color:var(--muted);
-    padding:6px 4px;
-    background:var(--paper);
-    line-height:1.3;
-    white-space:nowrap;
-  }
-  table.roster th.daynum{
-    font-size:12px;
-    font-weight:700;
-    color:var(--ink);
-  }
-  th.weekend, td.weekend{background:#f0ebe2;}
-
-  .name-cell{
-    padding:0 !important;
-    text-align:left !important;
-    position:sticky;
-    left:0;
-    background:var(--white);
-    z-index:2;
-    min-width:170px;
-  }
-  .name-cell input.emp-name{
-    width:100%;
-    border:none;
-    background:transparent;
-    padding:8px 10px 2px;
-    font-size:13px;
-    font-weight:600;
-    font-family:var(--font-body);
-    color:var(--ink);
-  }
-  .name-cell input.emp-name:focus{outline:2px solid var(--accent);outline-offset:-2px;}
-  .name-cell input.emp-name{padding-right:24px;}
-
-  .emp-dates{
-    display:flex;
-    gap:8px;
-    padding:0 10px 8px;
-    font-family:var(--font-mono);
-    font-size:10px;
-    color:var(--muted);
-    text-transform:uppercase;
-    letter-spacing:0.5px;
-  }
-  .emp-dates label{
-    display:flex;
-    align-items:center;
-    gap:4px;
-  }
-  .emp-dates input[type="date"]{
-    font-family:var(--font-body);
-    font-size:11px;
-    padding:2px 4px;
-    border:1px solid var(--line);
-    border-radius:3px;
-    background:var(--paper);
-    color:var(--ink);
-    max-width:108px;
-  }
-  .name-cell .del-row{
-    position:absolute;
-    right:2px;
-    top:50%;
-    transform:translateY(-50%);
-    border:none;
-    background:transparent;
-    color:var(--muted);
-    cursor:pointer;
-    font-size:15px;
-    line-height:1;
-    padding:2px 5px;
-    display:none;
-  }
-  .name-cell{position:relative;}
-  .name-cell:hover .del-row{display:block;}
-  .name-cell:hover .del-row:hover{color:var(--accent);}
-
-  td.daycell{
-    width:34px;
-    height:30px;
-    cursor:pointer;
-    background:var(--lavora);
-    transition:background .1s;
-    user-select:none;
-  }
-  td.daycell.riposo{
-    background:var(--riposo);
-  }
-  td.daycell:hover{
-    box-shadow:inset 0 0 0 2px var(--accent);
-  }
-  td.daycell.riposo::after{
-    content:'R';
-    font-family:var(--font-mono);
-    font-size:10px;
-    color:var(--riposo-strong);
-    font-weight:700;
-  }
-  td.daycell.ferie{
-    background:var(--ferie);
-  }
-  td.daycell.ferie::after{
-    content:'F';
-    font-family:var(--font-mono);
-    font-size:10px;
-    color:var(--ferie-strong);
-    font-weight:700;
-  }
-  td.daycell.inactive{
-    background:repeating-linear-gradient(135deg, #ece8e1 0px, #ece8e1 4px, #e2ddd3 4px, #e2ddd3 8px);
-    cursor:default;
-  }
-  td.daycell.inactive:hover{
-    box-shadow:none;
-  }
-
-  .dept-settings{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:10px 16px;
-    background:var(--paper);
-    border-bottom:1px solid var(--line);
-    flex-wrap:wrap;
-    font-size:12px;
-  }
-  .dept-settings label{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    color:var(--muted);
-  }
-  .dept-settings input[type="number"]{
-    width:50px;
-    padding:5px 6px;
-    border:1px solid var(--line-strong);
-    border-radius:4px;
-    background:var(--white);
-    font-family:var(--font-body);
-    font-size:12px;
-  }
-  .dept-settings .checkbox-label{
-    cursor:pointer;
-  }
-  .dept-settings .checkbox-label input[type="checkbox"]{
-    width:14px;
-    height:14px;
-    cursor:pointer;
-  }
-  .dept-settings .mode-hint{
-    font-family:var(--font-mono);
-    font-size:10px;
-    color:var(--muted);
-    text-transform:uppercase;
-    letter-spacing:1px;
-  }
-  .dept-settings button.generate{
-    margin-left:auto;
-    border:1px solid var(--ink);
-    background:var(--ink);
-    color:var(--white);
-    padding:6px 14px;
-    border-radius:4px;
-    font-size:12px;
-    font-weight:600;
-    cursor:pointer;
-    white-space:nowrap;
-  }
-  .dept-settings button.generate:hover{background:var(--accent);border-color:var(--accent);}
-
-  .coverage-report{
-    padding:10px 16px;
-    border-top:1px solid var(--line);
-    font-size:12px;
-    background:var(--white);
-  }
-  .coverage-report .ok-msg{color:var(--ok);font-weight:600;}
-  .coverage-report .warn-msg{color:var(--warn);font-weight:600;}
-  .coverage-report ul{
-    margin:6px 0 0;
-    padding-left:18px;
-  }
-  .coverage-report li{margin-bottom:2px;}
-
-  .add-row-cell{
-    padding:8px !important;
-  }
-  .add-row-btn{
-    width:100%;
-    border:1px dashed var(--line-strong);
-    background:transparent;
-    color:var(--muted);
-    padding:6px;
-    border-radius:4px;
-    font-size:12px;
-    cursor:pointer;
-    font-family:var(--font-body);
-  }
-  .add-row-btn:hover{border-color:var(--accent);color:var(--accent);}
-
-  .add-dept-wrap{
-    text-align:center;
-    margin-top:8px;
-  }
-  .add-dept-wrap button{
-    border:1px dashed var(--line-strong);
-    background:transparent;
-    color:var(--muted);
-    padding:10px 20px;
-    border-radius:var(--radius);
-    font-size:13px;
-    cursor:pointer;
-    font-family:var(--font-body);
-    width:100%;
-  }
-  .add-dept-wrap button:hover{border-color:var(--accent);color:var(--accent);}
-
-  .legend{
-    display:flex;
-    gap:18px;
-    margin-bottom:18px;
-    font-size:12px;
-    color:var(--muted);
-    flex-wrap:wrap;
-    align-items:center;
-  }
-  .legend .item{display:flex;align-items:center;gap:6px;}
-  .legend .swatch{width:16px;height:16px;border-radius:3px;border:1px solid var(--line-strong);}
-  .legend .swatch.lavora{background:var(--lavora);}
+  /* LEGEND */
+  .legend{display:flex;gap:14px;align-items:center;margin-bottom:12px;font-size:11px;color:var(--muted);}
+  .legend .swatch{display:inline-block;width:14px;height:14px;border-radius:2px;margin-right:4px;vertical-align:middle;}
   .legend .swatch.riposo{background:var(--riposo);}
   .legend .swatch.ferie{background:var(--ferie);}
-  .legend .hint{font-family:var(--font-mono);font-size:11px;}
 
-  footer.foot{
-    margin-top:10px;
-    text-align:center;
-    font-family:var(--font-mono);
-    font-size:10px;
-    color:var(--muted);
-    letter-spacing:1px;
-    text-transform:uppercase;
-  }
+  /* DEPT BLOCK */
+  .dept-block{margin-bottom:24px;border:1px solid var(--line);border-radius:4px;overflow:hidden;}
+  .dept-header{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--ink);color:var(--white);}
+  .dept-header input.dept-name{font-family:var(--font-sans);font-size:15px;font-weight:700;color:var(--white);background:transparent;border:none;outline:none;flex:1;}
+  .dept-header button{font-size:11px;border:1px solid rgba(255,255,255,.4);border-radius:3px;padding:3px 8px;background:transparent;color:var(--white);cursor:pointer;}
+  .dept-header button:hover{background:var(--accent);border-color:var(--accent);}
 
-  .empty-state{
-    text-align:center;
-    color:var(--muted);
-    font-style:italic;
-    padding:40px 20px;
-  }
+  /* DEPT SETTINGS */
+  .dept-settings{background:#f0ede8;padding:8px 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;border-bottom:1px solid var(--line);}
+  .dept-settings label{font-size:11px;color:var(--ink);display:flex;align-items:center;gap:4px;}
+  .dept-settings input[type="number"]{width:48px;font-size:11px;border:1px solid var(--line-strong);border-radius:3px;padding:2px 4px;}
+  .dept-settings .checkbox-label{font-size:11px;color:var(--ink);display:flex;align-items:center;gap:4px;cursor:pointer;}
+  .dept-settings .checkbox-label input[type="checkbox"]{margin:0;}
+  .dept-settings .mode-hint{font-size:10px;color:var(--muted);font-style:italic;}
+  .dept-settings button.generate{font-size:11px;border:1px solid var(--ink);border-radius:3px;padding:4px 10px;background:var(--ink);color:var(--white);cursor:pointer;margin-left:auto;}
+  .dept-settings button.generate:hover{background:var(--accent);border-color:var(--accent);}
 
+  /* COVERAGE REPORT */
+  .coverage-report{padding:6px 12px;font-size:11px;background:#fafaf8;}
+  .coverage-report .ok-msg{color:var(--ok);font-weight:600;}
+  .coverage-report .warn-msg{color:var(--warn);font-weight:600;}
+  .coverage-report ul{margin:4px 0 4px 16px;}
+  .coverage-report li{margin-bottom:2px;}
+
+  /* ROSTER TABLE */
+  .grid-wrap{overflow-x:auto;}
+  table.roster{border-collapse:collapse;font-size:12px;width:max-content;}
+  table.roster th,table.roster td{border:1px solid var(--line);text-align:center;padding:0;}
+  table.roster th{background:#f0ede8;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;padding:3px 4px;white-space:nowrap;}
+  th.daynum{min-width:28px;font-size:9px;line-height:1.2;}
+  th.weekend,td.weekend{background:#ede8de;}
+
+  /* NAME CELL */
+  .name-cell{min-width:160px;max-width:200px;text-align:left!important;padding:2px 6px!important;position:sticky;left:0;z-index:2;background:var(--white);}
+  .name-cell input.emp-name{font-family:var(--font-sans);font-size:12px;border:none;outline:none;background:transparent;width:calc(100% - 20px);padding:1px 0;}
+  .name-cell input.emp-name:focus{outline:2px solid var(--accent);outline-offset:-2px;}
+  .name-cell input.emp-name{padding-right:24px;}
+  .name-cell .del-row{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1;padding:2px;}
+  .name-cell .del-row:hover{color:var(--accent);}
+
+  /* ROLE COLORS */
+  tr[data-role="responsabile"] .name-cell{background:#fbe9d8;border-left:3px solid #c4791f;}
+  tr[data-role="responsabile"] input.emp-name{color:#8a4f0f;font-weight:700;}
+  tr[data-role="vice"] .name-cell{background:#e3edf7;border-left:3px solid #3d6fa3;}
+  tr[data-role="vice"] input.emp-name{color:#234d73;font-weight:700;}
+  tr[data-role="pasticcere"] .name-cell{background:#e6f4e6;border-left:3px solid #3a8a3a;}
+  tr[data-role="pasticcere"] input.emp-name{color:#1f5c1f;font-weight:700;}
+  tr[data-role="consegne_pomeriggio"] .name-cell{background:#f0e6f6;border-left:3px solid #7c3fa0;}
+  tr[data-role="consegne_pomeriggio"] input.emp-name{color:#52217a;font-weight:700;}
+  tr[data-role="forni"] .name-cell{background:#fde8e8;border-left:3px solid #b03030;}
+  tr[data-role="forni"] input.emp-name{color:#7a1a1a;font-weight:700;}
+  tr[data-role="forni_bis"] .name-cell{background:#fdf0e8;border-left:3px solid #c47a3a;}
+  tr[data-role="forni_bis"] input.emp-name{color:#8a4a10;font-weight:700;}
+
+  /* SELECT RUOLO */
+  select.emp-role{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.5px;border:1px solid var(--line-strong);border-radius:3px;padding:2px 4px;background:var(--white);color:var(--muted);cursor:pointer;}
+  tr[data-role="responsabile"] select.emp-role{border-color:#c4791f;color:#8a4f0f;}
+  tr[data-role="vice"] select.emp-role{border-color:#3d6fa3;color:#234d73;}
+  tr[data-role="pasticcere"] select.emp-role{border-color:#3a8a3a;color:#1f5c1f;}
+  tr[data-role="consegne_pomeriggio"] select.emp-role{border-color:#7c3fa0;color:#52217a;}
+  tr[data-role="forni"] select.emp-role{border-color:#b03030;color:#7a1a1a;}
+  tr[data-role="forni_bis"] select.emp-role{border-color:#c47a3a;color:#8a4a10;}
+
+  /* EMP DATES */
+  .emp-dates{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:2px;}
+  .emp-dates label{font-size:9px;color:var(--muted);display:flex;align-items:center;gap:2px;}
+  .emp-dates input[type="date"]{font-size:9px;border:1px solid var(--line);border-radius:2px;padding:1px 3px;width:100px;}
+
+  /* DAY CELLS */
+  td.daycell{width:28px;min-width:28px;height:22px;cursor:pointer;position:relative;}
+  td.daycell:hover{box-shadow:inset 0 0 0 2px var(--accent);}
+  td.daycell.inactive{background:#f0ede8;cursor:default;}
+  td.daycell.inactive:hover{box-shadow:none;}
+
+  /* RIPOSI COLORATI PER GIORNO */
+  td.daycell.riposo{background:var(--riposo);}
+  td.daycell.riposo.dow-1{background:#a8c8e8;}
+  td.daycell.riposo.dow-2{background:#a8d8a8;}
+  td.daycell.riposo.dow-3{background:#e8d888;}
+  td.daycell.riposo.dow-4{background:#e8a8c8;}
+  td.daycell.riposo.dow-5{background:#a8e0d8;}
+  td.daycell.riposo.dow-6{background:#c8a8e8;}
+  td.daycell.riposo.dow-0{background:#e8c8a8;}
+  td.daycell.riposo::after{content:'R';font-family:var(--font-mono);font-size:10px;color:var(--riposo-strong);font-weight:700;}
+  td.daycell.riposo.dow-1::after{color:#2a5a80;}
+  td.daycell.riposo.dow-2::after{color:#2a6a2a;}
+  td.daycell.riposo.dow-3::after{color:#806820;}
+  td.daycell.riposo.dow-4::after{color:#80286a;}
+  td.daycell.riposo.dow-5::after{color:#206860;}
+  td.daycell.riposo.dow-6::after{color:#502880;}
+  td.daycell.riposo.dow-0::after{color:#804828;}
+  td.daycell.ferie{background:var(--ferie);}
+  td.daycell.ferie::after{content:'F';font-family:var(--font-mono);font-size:10px;color:var(--ferie-strong);font-weight:700;}
+
+  /* ADD DEPT */
+  .add-dept-wrap{margin-top:16px;}
+
+  footer.foot{margin-top:24px;padding-top:10px;border-top:1px solid var(--line);font-size:10px;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.5px;}
+
+  /* PRINT */
+  @page{size:A3 landscape;margin:6mm 4mm;}
   @media print{
-    body{ background:var(--white); font-size:10px; }
-    .app{ max-width:none; padding:8px; }
-    .toolbar, .legend, footer.foot, .add-row-btn, .add-dept-wrap,
-    .name-cell .del-row, .dept-header button, .min-coverage,
-    .dept-settings button.generate{
-      display:none !important;
-    }
-    .month-nav input[type="date"]{
-      border:none;
-      background:transparent;
-      padding:0;
-    }
-    .dept-block{
-      page-break-inside:avoid;
-      border:1px solid #999;
-      margin-bottom:14px;
-    }
-    .dept-header{
-      background:#eee !important;
-      color:var(--ink) !important;
-    }
-    .dept-header input.dept-name{
-      color:var(--ink) !important;
-      font-weight:700;
-    }
-    .dept-settings{
-      background:#fff;
-    }
-    td.daycell.riposo{ background:#ddd !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    td.daycell.ferie{ background:#f0e0cc !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    td.daycell.inactive{ background:#eee !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    th.weekend, td.weekend{ background:#f5f5f5 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .emp-dates input[type="date"]{
-      border:none;
-      background:transparent;
-      padding:0;
-    }
-    .grid-wrap{ overflow:visible; }
-    table.roster{ font-size:9px; }
-  }
+    html,body{width:100%;height:auto;background:var(--white);font-size:8px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .app{max-width:none;width:100%;padding:4px;}
+    .toolbar,.legend,footer.foot,.add-dept-wrap,.name-cell .del-row,.dept-header button,.dept-settings button.generate,.coverage-report,select.emp-role,.emp-dates,input[type="date"],.month-nav input[type="date"]{display:none!important;}
+    .month-nav{margin-bottom:4px;}
+    .dept-block{page-break-inside:avoid;break-inside:avoid;border:2px solid #333;margin-bottom:8px;}
+    .dept-header{background:#eee!important;color:var(--ink)!important;padding:3px 6px;border-bottom:2px solid #333!important;}
+    .dept-header input.dept-name{color:var(--ink)!important;font-weight:700;font-size:10px;}
+    .dept-settings{display:none!important;}
+    .grid-wrap{overflow:visible!important;width:100%;}
 
-  /* Sync status */
-  .sync-status{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    font-family:var(--font-mono);
-    font-size:11px;
-    color:var(--muted);
-    margin-left:auto;
-  }
-  .sync-dot{
-    width:8px;height:8px;
-    border-radius:50%;
-    background:var(--muted);
-    flex-shrink:0;
-    transition:background .4s;
-  }
-  .sync-dot.connected{background:#7d9c70;}
-  .sync-dot.saving{background:#e8a838;}
-  .sync-dot.error{background:#b5563c;}
+    /* Griglia principale: bordi netti e leggibili */
+    table.roster{font-size:7px;width:100%;table-layout:auto;border-collapse:collapse;border:2.5px solid #111!important;}
+    table.roster th,table.roster td{
+      padding:1px 2px;min-width:0;
+      border:1px solid #999!important;
+    }
+    /* Bordo più spesso tra ogni riga (separatore orizzontale robusto) */
+    table.roster tbody tr{border-top:2px solid #222!important;border-bottom:2px solid #222!important;}
+    table.roster tbody tr td,
+    table.roster tbody tr th{
+      border-top:2px solid #222!important;
+      border-bottom:2px solid #222!important;
+    }
+    /* Bordo ancora più spesso ogni sabato (separatore settimanale) */
+    table.roster th.dow-6, table.roster td.dow-6{border-right:2.5px solid #111!important;}
+    /* Intestazione colonne ben marcata */
+    table.roster thead tr{border-bottom:3px solid #111!important;}
+    table.roster thead th{
+      border:1px solid #666!important;
+      border-bottom:3px solid #111!important;
+      background:#ccc!important;
+      font-weight:800;
+      font-size:7px;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+    /* Colonna nomi: bordo destro spesso per separare i nomi dalle celle */
+    .name-cell{
+      min-width:110px!important;max-width:150px!important;
+      font-size:16px;font-weight:700;word-break:break-word;position:static!important;
+      border-right:3px solid #111!important;
+      border-top:2px solid #222!important;
+      border-bottom:2px solid #222!important;
+    }
+    .name-cell input.emp-name{font-size:16px;font-weight:700;padding:0;border:none;background:transparent;width:100%;}
+    th.daynum{font-size:6px;padding:1px;}
 
-  /* Loading overlay */
-  .loading-overlay{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(247,245,241,.85);
-    z-index:9999;
-    align-items:center;
-    justify-content:center;
+    /* Altezza righe uniforme 4x su tutte le celle della riga */
+    table.roster tbody tr td,
+    table.roster tbody tr th{
+      height:28px!important;
+      line-height:28px!important;
+      padding:0 2px!important;
+      vertical-align:middle!important;
+    }
+    table.roster tbody tr:nth-child(odd) .name-cell,
+    table.roster tbody tr:nth-child(odd) td.daycell:not(.riposo):not(.ferie):not(.inactive){
+      background-color:#f0f0f0!important;
+      -webkit-print-color-adjust:exact;print-color-adjust:exact;
+    }
+    table.roster tbody tr:nth-child(even) .name-cell,
+    table.roster tbody tr:nth-child(even) td.daycell:not(.riposo):not(.ferie):not(.inactive){
+      background-color:#e0e0e0!important;
+      -webkit-print-color-adjust:exact;print-color-adjust:exact;
+    }
+    /* I colori ruolo sulla cella nome sovrascrivono l'alternanza */
+    tr[data-role="responsabile"] .name-cell{background:#fbe9d8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    tr[data-role="vice"] .name-cell{background:#e3edf7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    tr[data-role="pasticcere"] .name-cell{background:#e6f4e6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    tr[data-role="consegne_pomeriggio"] .name-cell{background:#f0e6f6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    tr[data-role="forni"] .name-cell{background:#fde8e8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    tr[data-role="forni_bis"] .name-cell{background:#fdf0e8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    /* Colori celle */
+    td.daycell.riposo{background:#cfc9bd!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td.daycell.riposo.dow-1{background:#a8c8e8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td.daycell.riposo.dow-2{background:#a8d8a8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td.daycell.riposo.dow-3{background:#e8d888!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td.daycell.riposo.dow-4{background:#e8a8c8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td.daycell.riposo.dow-5{background:#a8e0d8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td.daycell.riposo.dow-6{background:#c8a8e8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td.daycell.riposo.dow-0{background:#e8c8a8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td.daycell.ferie{background:#f0e0cc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    td.daycell.inactive{background:#f0f0f0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    th.weekend,td.weekend{background:#f0f0f0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    tr[data-role="responsabile"] .name-cell{background:#fbe9d8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    tr[data-role="vice"] .name-cell{background:#e3edf7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    tr[data-role="pasticcere"] .name-cell{background:#e6f4e6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    tr[data-role="consegne_pomeriggio"] .name-cell{background:#f0e6f6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    tr[data-role="forni"] .name-cell{background:#fde8e8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    tr[data-role="forni_bis"] .name-cell{background:#fdf0e8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   }
-  .loading-overlay.visible{display:flex;}
-  .loading-box{
-    background:var(--white);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:32px 40px;
-    text-align:center;
-    font-family:var(--font-body);
-    font-size:14px;
-    color:var(--muted);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:16px;
-  }
-  .loading-spinner{
-    width:32px;height:32px;
-    border:3px solid var(--line);
-    border-top-color:var(--accent);
-    border-radius:50%;
-    animation:spin .8s linear infinite;
-  }
-  @keyframes spin{ to{ transform:rotate(360deg); } }
 </style>
-<!-- Firebase SDK -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
 </head>
 <body>
 <div class="app">
-
-  <header class="top">
-    <div>
-      <h1>Prospetto Turni Mensile</h1>
-      <div class="sub">Reparti · personale · giorni di riposo</div>
-    </div>
-    <div class="month-nav">
-      <label class="range-label">Dal
-        <input type="date" id="periodStart">
-      </label>
-      <label class="range-label">Al
-        <input type="date" id="periodEnd">
-      </label>
-      <div class="label" id="monthLabel"></div>
-    </div>
-  </header>
-
-  <div class="legend">
-    <div class="item"><span class="swatch lavora"></span> Lavora</div>
-    <div class="item"><span class="swatch riposo"></span> Riposo</div>
-    <div class="item"><span class="swatch ferie"></span> Ferie</div>
-    <div class="hint">Clicca su una cella: Lavora → Riposo → Ferie → Lavora</div>
-  </div>
-
   <div class="toolbar">
+    <h1>Prospetto Turni Mensile</h1>
+    <span class="sub">Reparti · Personale · Giorni di Riposo</span>
+    <div class="month-nav">
+      <label>Dal</label>
+      <input type="date" id="periodStart">
+      <label>Al</label>
+      <input type="date" id="periodEnd">
+      <span class="days-count" id="daysCount"></span>
+    </div>
     <button id="shareBtn">🔗 Condividi link</button>
     <button id="exportPdfBtn">Esporta PDF</button>
-    <button id="exportBtn">Esporta dati (JSON)</button>
-    <label for="importFile" class="file-label">Importa dati (JSON)</label>
-    <input type="file" id="importFile" accept="application/json,.json">
-    <button id="addDeptTop" class="primary">+ Nuovo reparto</button>
-    <div class="sync-status" id="syncStatus">
-      <span class="sync-dot" id="syncDot"></span>
-      <span id="syncMsg">Connessione...</span>
-    </div>
-    <div class="status-msg" id="statusMsg"></div>
+    <button id="exportJsonBtn">Esporta dati (JSON)</button>
+    <label class="file-label">Importa dati (JSON)<input type="file" id="importJsonInput" accept=".json" style="display:none"></label>
+    <button class="primary" id="addDeptBtn">+ Nuovo reparto</button>
+    <span class="sync-status" id="syncStatus"></span>
   </div>
-
-  <div id="loadingOverlay" class="loading-overlay">
-    <div class="loading-box">
-      <div class="loading-spinner"></div>
-      <div>Caricamento dati in corso…</div>
-    </div>
+  <div class="legend">
+    <span><span class="swatch riposo"></span>Riposo</span>
+    <span><span class="swatch ferie" style="background:#e8c89a;display:inline-block;width:14px;height:14px;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Ferie</span>
+    <span style="font-size:10px;color:var(--muted);">Clicca su una cella: Lavora → Riposo → Ferie → Lavora</span>
   </div>
-  <div id="departments"></div>
-
-  <footer class="foot">I dati sono mantenuti nella sessione del browser corrente — esporta per conservarli o condividerli</footer>
+  <div id="deptContainer"></div>
+  <div class="add-dept-wrap"></div>
+  <footer class="foot">I dati sono mantenuti nella sessione del browser corrente — Esporta per conservarli o condividerli</footer>
 </div>
-
 <script>
-// =============================================================
-// CONFIGURAZIONE FIREBASE — SOSTITUISCI CON I TUOI DATI
-// Trovi questi valori in: Firebase Console → Impostazioni progetto
-// → Le tue app → (la tua web app) → SDK setup and configuration
-// =============================================================
-const firebaseConfig = {
-  apiKey:            "AIzaSyB08NmunQbwid4W4bZIBdAE3Kd-0P5Mih8",
-  authDomain:        "turni-lavoro-543c6.firebaseapp.com",
-  databaseURL:       "https://turni-lavoro-543c6-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId:         "turni-lavoro-543c6",
-  storageBucket:     "turni-lavoro-543c6.firebasestorage.app",
-  messagingSenderId: "360806251809",
-  appId:             "1:360806251809:web:e75e583630d2d9d14b1260",
-  measurementId:     "G-DPTE4SKJ74"
-};
-// =============================================================
-(function(){
-  const DAY_NAMES = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
-  const MONTH_NAMES = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  // ---------- Utils ----------
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+  function parseDateStr(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+  function dateToStr(d){ const mm=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+mm+'-'+dd; }
+  function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function formatDateShort(dateStr){
+    const d=parseDateStr(dateStr);
+    const dn=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+    return dn[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0');
+  }
 
-  function makeEmployee(name){
-    return {id: uid(), name: name, status: {}, hireDate: '', endDate: ''};
+  // ---------- Data ----------
+  function makeEmployee(name, role, fixedRestDays, pairWith){
+    return {
+      id: uid(), name: name||'', status: {}, hireDate:'', endDate:'',
+      role: role||'operatore',
+      fixedRestDays: fixedRestDays||[],
+      pairWith: pairWith||null
+    };
   }
 
   let state = {
-    departments: [
-      {
-        id: uid(),
-        name: 'Impastatrice e Confezionato',
-        maxRestPerDay: 1,
-        avoidMonday: true,
-        employees: [
-          'Francesco Librio','Angelo','Anthony','Tony'
-        ].map(makeEmployee)
-      },
-      {
-        id: uid(),
-        name: 'Produzione',
-        maxRestPerDay: 4,
-        avoidMonday: false,
-        employees: [
-          'Veronica','Basile','Giulia','Salvo','Cristina','Martina R',
-          'Grazia','Samuele','Giovanni','Martina','Aliso','Incognito',
-          'Giuseppe','Sonia','Mara','Erika','Sorella Ciccio','Alessandra',
-          'Rotweiler','Alfio','Graziella','Muscolino','Federica','Nicole'
-        ].map(makeEmployee)
-      },
-      {
-        id: uid(),
-        name: 'Notte',
-        maxRestPerDay: 1,
-        avoidMonday: true,
-        employees: [
-          'Islam','Marcello','Attilio','Domenico','Azad','Peppe'
-        ].map(makeEmployee)
-      },
-      {
-        id: uid(),
-        name: 'Confezionato',
-        maxRestPerDay: 1,
-        avoidMonday: true,
-        employees: [
-          'Stella','Orazio','Kiki','Giuliano','Stefano','Piero','Michela'
-        ].map(makeEmployee)
-      }
-    ]
+    departments:[{
+      id: uid(),
+      name: 'Personale',
+      maxRestPerDay: 12,
+      saturdayMaxRest: 11,
+      restDaysPerWeek: 2,
+      avoidMonday: false,
+      saturdayOverflow: true,
+      employees:[
+        makeEmployee('Responsabile 1','responsabile'),
+        makeEmployee('Responsabile 2','responsabile'),
+        makeEmployee('Vice Responsabile 1','vice'),
+        makeEmployee('Vice Responsabile 2','vice'),
+        makeEmployee('Pasticcere 1','pasticcere'),
+        makeEmployee('Pasticcere 2','pasticcere'),
+        makeEmployee('Pasticcere 3','pasticcere'),
+        makeEmployee('Forni 1','forni'),
+        makeEmployee('Forni 2','forni'),
+        makeEmployee('Forni Bis 1','forni_bis'),
+        makeEmployee('Forni Bis 2','forni_bis'),
+        makeEmployee('Consegne Pom. 1','consegne_pomeriggio'),
+        makeEmployee('Consegne Pom. 2','consegne_pomeriggio'),
+        ...Array.from({length:28},(_,i)=>makeEmployee('Operatore '+(i+1),'operatore'))
+      ]
+    }]
   };
 
-  // periodo di pianificazione di default: 22 giugno - 26 luglio 2026
-  // (estende il 22/07 fino alla domenica successiva, per avere solo settimane complete da 7 giorni)
-  let periodStart = new Date(2026, 5, 22);
-  let periodEnd = new Date(2026, 6, 26);
+  let periodStart = new Date(2026,5,29);
+  let periodEnd   = new Date(2026,7,2);
 
-  function uid(){
-    return 'id_' + Math.random().toString(36).slice(2,10);
-  }
-
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, c=>({
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    })[c]);
-  }
-
-  let flashTimer = null;
-  function flashStatus(msg){
-    const el = document.getElementById('statusMsg');
-    el.textContent = msg;
-    if(flashTimer) clearTimeout(flashTimer);
-    flashTimer = setTimeout(()=>{ el.textContent=''; }, 1500);
-  }
-
-  function fmtDate(y,m,d){
-    const mm = String(m+1).padStart(2,'0');
-    const dd = String(d).padStart(2,'0');
-    return `${y}-${mm}-${dd}`;
-  }
-
-  function dateToStr(d){
-    return fmtDate(d.getFullYear(), d.getMonth(), d.getDate());
-  }
-
-  // parsa una stringa "YYYY-MM-DD" come data locale (evita problemi di fuso orario di new Date(str))
-  function parseDateStr(dateStr){
-    const [y,m,d] = dateStr.split('-').map(Number);
-    return new Date(y, m-1, d);
-  }
-
-  // restituisce l'elenco di date "YYYY-MM-DD" dal periodStart al periodEnd inclusi
+  // ---------- Period dates ----------
   function getPeriodDates(){
-    const dates = [];
-    if(!periodStart || !periodEnd) return dates;
-    const cur = new Date(periodStart);
+    const dates=[],cur=new Date(periodStart);
     cur.setHours(0,0,0,0);
-    const end = new Date(periodEnd);
-    end.setHours(0,0,0,0);
-    if(cur > end) return dates;
-    while(cur <= end){
-      dates.push(dateToStr(cur));
-      cur.setDate(cur.getDate()+1);
-    }
+    const e=new Date(periodEnd); e.setHours(0,0,0,0);
+    while(cur<=e){ dates.push(dateToStr(cur)); cur.setDate(cur.getDate()+1); }
     return dates;
   }
 
-  // un dipendente è "attivo" in una data se la data è compresa tra hireDate (se impostata)
-  // ed endDate (se impostata), inclusi entrambi gli estremi
-  function isEmployeeActive(emp, dateStr){
-    if(emp.hireDate && dateStr < emp.hireDate) return false;
-    if(emp.endDate && dateStr > emp.endDate) return false;
+  // ---------- Employee helpers ----------
+  function isEmployeeActive(emp,dateStr){
+    if(emp.hireDate && dateStr<emp.hireDate) return false;
+    if(emp.endDate && dateStr>emp.endDate) return false;
     return true;
   }
-
-  // ---------- Department / employee management ----------
-  function addDepartment(){
-    state.departments.push({
-      id: uid(),
-      name: 'Nuovo reparto',
-      maxRestPerDay: 1,
-      avoidMonday: true,
-      employees: [{id: uid(), name: '', status: {}, hireDate: '', endDate: ''}]
-    });
-    render();
-  }
-
-  function removeDepartment(deptId){
-    if(!confirm('Eliminare questo reparto e tutti i suoi dati?')) return;
-    state.departments = state.departments.filter(d=>d.id!==deptId);
-    render();
-  }
-
-  function renameDepartment(deptId, name){
-    const dept = state.departments.find(d=>d.id===deptId);
-    if(dept) dept.name = name;
-  }
-
-  function addEmployee(deptId){
-    const dept = state.departments.find(d=>d.id===deptId);
-    if(dept){
-      dept.employees.push({id: uid(), name: '', status: {}, hireDate: '', endDate: ''});
-      render();
-    }
-  }
-
-  function removeEmployee(deptId, empId){
-    const dept = state.departments.find(d=>d.id===deptId);
-    if(dept){
-      dept.employees = dept.employees.filter(e=>e.id!==empId);
-      render();
-    }
-  }
-
-  function renameEmployee(deptId, empId, name){
-    const dept = state.departments.find(d=>d.id===deptId);
+  function cycleStatus(deptId,empId,dateStr){
+    const dept=state.departments.find(d=>d.id===deptId);
     if(!dept) return;
-    const emp = dept.employees.find(e=>e.id===empId);
-    if(emp) emp.name = name;
+    const emp=dept.employees.find(e=>e.id===empId);
+    if(!emp||!isEmployeeActive(emp,dateStr)) return undefined;
+    const cur=emp.status[dateStr]||'';
+    if(cur==='') emp.status[dateStr]='riposo';
+    else if(cur==='riposo') emp.status[dateStr]='ferie';
+    else delete emp.status[dateStr];
+    notifyChange();
+    return emp.status[dateStr]||'';
   }
 
-  function setEmployeeHireDate(deptId, empId, value){
-    const dept = state.departments.find(d=>d.id===deptId);
-    if(!dept) return;
-    const emp = dept.employees.find(e=>e.id===empId);
-    if(emp) emp.hireDate = value || '';
-  }
+  // ---------- Setters ----------
+  function renameEmployee(deptId,empId,value){ const d=state.departments.find(x=>x.id===deptId); if(!d)return; const e=d.employees.find(x=>x.id===empId); if(e){e.name=value;notifyChange();} }
+  function setEmployeeRole(deptId,empId,value){ const d=state.departments.find(x=>x.id===deptId); if(!d)return; const e=d.employees.find(x=>x.id===empId); if(e){e.role=value||'operatore';notifyChange();} }
+  function setEmployeeHireDate(deptId,empId,value){ const d=state.departments.find(x=>x.id===deptId); if(!d)return; const e=d.employees.find(x=>x.id===empId); if(e){e.hireDate=value||'';notifyChange();} }
+  function setEmployeeEndDate(deptId,empId,value){ const d=state.departments.find(x=>x.id===deptId); if(!d)return; const e=d.employees.find(x=>x.id===empId); if(e){e.endDate=value||'';notifyChange();} }
+  function setMaxRestPerDay(deptId,value){ const d=state.departments.find(x=>x.id===deptId); if(!d)return; const n=parseInt(value,10); d.maxRestPerDay=(isNaN(n)||n<0)?0:n; }
+  function setSaturdayMaxRest(deptId,value){ const d=state.departments.find(x=>x.id===deptId); if(!d)return; const n=parseInt(value,10); d.saturdayMaxRest=(isNaN(n)||n<0)?0:n; }
+  function setRestDaysPerWeek(deptId,value){ const d=state.departments.find(x=>x.id===deptId); if(!d)return; const n=parseInt(value,10); d.restDaysPerWeek=(isNaN(n)||n<1)?1:Math.min(n,7); }
+  function setAvoidMonday(deptId,value){ const d=state.departments.find(x=>x.id===deptId); if(!d)return; d.avoidMonday=!!value; }
+  function setSaturdayOverflow(deptId,value){ const d=state.departments.find(x=>x.id===deptId); if(!d)return; d.saturdayOverflow=!!value; }
+  function addEmployee(deptId){ const d=state.departments.find(x=>x.id===deptId); if(d){ d.employees.push(makeEmployee('','operatore')); render(); } }
+  function removeEmployee(deptId,empId){ const d=state.departments.find(x=>x.id===deptId); if(!d)return; d.employees=d.employees.filter(e=>e.id!==empId); render(); notifyChange(); }
+  function addDepartment(){ state.departments.push({id:uid(),name:'Nuovo reparto',maxRestPerDay:1,saturdayMaxRest:1,restDaysPerWeek:2,avoidMonday:true,saturdayOverflow:false,employees:[makeEmployee('','operatore')]}); render(); }
+  function removeDepartment(deptId){ state.departments=state.departments.filter(d=>d.id!==deptId); render(); notifyChange(); }
+  function renameDepartment(deptId,value){ const d=state.departments.find(x=>x.id===deptId); if(d){d.name=value;notifyChange();} }
 
-  function setEmployeeEndDate(deptId, empId, value){
-    const dept = state.departments.find(d=>d.id===deptId);
-    if(!dept) return;
-    const emp = dept.employees.find(e=>e.id===empId);
-    if(emp) emp.endDate = value || '';
-  }
-
-  // Ciclo: lavora -> riposo -> ferie -> lavora
-  function cycleStatus(deptId, empId, dateStr){
-    const dept = state.departments.find(d=>d.id===deptId);
-    if(!dept) return null;
-    const emp = dept.employees.find(e=>e.id===empId);
-    if(!emp) return null;
-    if(!isEmployeeActive(emp, dateStr)) return undefined; // fuori contratto, nessuna modifica
-    const current = emp.status[dateStr];
-    let next;
-    if(!current){
-      next = 'riposo';
-    }else if(current==='riposo'){
-      next = 'ferie';
-    }else{
-      next = null;
-    }
-    if(next){
-      emp.status[dateStr] = next;
-    }else{
-      delete emp.status[dateStr];
-    }
-    return next;
-  }
-
-  function setMaxRestPerDay(deptId, value){
-    const dept = state.departments.find(d=>d.id===deptId);
-    if(!dept) return;
-    const n = parseInt(value, 10);
-    dept.maxRestPerDay = (isNaN(n) || n<0) ? 0 : n;
-  }
-
-  function setAvoidMonday(deptId, value){
-    const dept = state.departments.find(d=>d.id===deptId);
-    if(!dept) return;
-    dept.avoidMonday = !!value;
-  }
-
-  // ---------- Auto-generation of rest days ----------
-  // Regole:
-  // - ogni dipendente riceve 1 giorno di riposo per ogni settimana del periodo in cui lavora
-  //   (esclusi i giorni di ferie e i giorni fuori dal periodo contrattuale)
-  // - i giorni di ferie restano fissi (non vengono toccati) e non generano riposo aggiuntivo
-  // - i giorni fuori contratto (prima dell'assunzione o dopo la fine contratto) sono trattati
-  //   come assenza: il dipendente non riceve riposo quel giorno e non conta nel conteggio
-  // - in nessun giorno il numero di riposi nel reparto può superare "maxRestPerDay" (vincolo rigido)
-  // - per ogni dipendente si evita di avere due riposi in giorni consecutivi (anche a cavallo
-  //   tra una settimana e l'altra)
-  // - se "avoidMonday" è attivo per il reparto, il lunedì viene evitato come giorno di riposo
-  //   quando possibile (preferenza, non vincolo rigido); se disattivato il lunedì è un giorno
-  //   come gli altri
-  // - eventuali riposi assegnati manualmente in precedenza vengono azzerati e ricalcolati (le ferie NO)
+  // ---------- Generate Rest Days ----------
   function generateRestDays(deptId){
-    const dept = state.departments.find(d=>d.id===deptId);
+    const dept=state.departments.find(d=>d.id===deptId);
     if(!dept) return null;
-    if(typeof dept.maxRestPerDay !== 'number') dept.maxRestPerDay = 1;
-    if(typeof dept.avoidMonday !== 'boolean') dept.avoidMonday = true;
+    if(typeof dept.maxRestPerDay!=='number') dept.maxRestPerDay=1;
+    if(typeof dept.saturdayMaxRest!=='number') dept.saturdayMaxRest=dept.maxRestPerDay;
+    if(typeof dept.restDaysPerWeek!=='number') dept.restDaysPerWeek=2;
+    if(typeof dept.avoidMonday!=='boolean') dept.avoidMonday=true;
+    if(typeof dept.saturdayOverflow!=='boolean') dept.saturdayOverflow=false;
 
-    const dates = getPeriodDates();
-    if(dates.length===0) return {critical:[], totalEmployees: dept.employees.length};
+    const dates=getPeriodDates();
+    if(dates.length===0) return {critical:[],roleGaps:[],totalEmployees:dept.employees.length};
 
-    // raggruppa le date in settimane (Lun-Dom), incluse settimane parziali a inizio/fine periodo
-    const weeks = [];
-    let currentWeek = [];
-    dates.forEach(dateStr=>{
-      const dow = parseDateStr(dateStr).getDay(); // 0=Dom..6=Sab
-      const mondayIndex = (dow===0) ? 6 : dow-1; // Lun=0..Dom=6
-      if(currentWeek.length>0 && mondayIndex===0){
-        weeks.push(currentWeek);
-        currentWeek = [];
-      }
-      currentWeek.push(dateStr);
+    // Settimane Lun-Dom
+    const weeks=[]; let cw=[];
+    dates.forEach(ds=>{
+      const dow=parseDateStr(ds).getDay();
+      const mi=(dow===0)?6:dow-1;
+      if(cw.length>0&&mi===0){weeks.push(cw);cw=[];}
+      cw.push(ds);
     });
-    if(currentWeek.length>0) weeks.push(currentWeek);
+    if(cw.length>0) weeks.push(cw);
 
-    // pulisci i riposi precedenti, mantieni le ferie
+    // Pulizia riposi (non ferie)
     dept.employees.forEach(emp=>{
-      Object.keys(emp.status).forEach(dateStr=>{
-        if(emp.status[dateStr]==='riposo') delete emp.status[dateStr];
+      Object.keys(emp.status).forEach(ds=>{ if(emp.status[ds]==='riposo') delete emp.status[ds]; });
+    });
+
+    const issues=[];
+    const restPerWeek=dept.restDaysPerWeek;
+
+    function countsOnDay(emp,ds){ return isEmployeeActive(emp,ds)&&emp.status[ds]!=='ferie'; }
+    function adjDate(ds,delta){ const d=parseDateStr(ds); d.setDate(d.getDate()+delta); return dateToStr(d); }
+    function isMonday(ds){ return parseDateStr(ds).getDay()===1; }
+    function isSaturday(ds){ return parseDateStr(ds).getDay()===6; }
+    function isWeekendDay(ds){ const w=parseDateStr(ds).getDay(); return w===0||w===6; }
+    function dayCap(ds){ return isSaturday(ds)?dept.saturdayMaxRest:dept.maxRestPerDay; }
+
+    // PRE-ASSEGNAZIONE giorni fissi
+    dept.employees.forEach(emp=>{
+      if(!emp.fixedRestDays||emp.fixedRestDays.length===0) return;
+      dates.forEach(ds=>{
+        const dow=parseDateStr(ds).getDay();
+        if(emp.fixedRestDays.includes(dow)&&isEmployeeActive(emp,ds)&&emp.status[ds]!=='ferie'){
+          emp.status[ds]='riposo';
+        }
       });
     });
 
-    const issues = [];
+    // Chi ha già abbastanza giorni fissi viene saltato nel ciclo automatico
+    const skipInAutoGen=new Set(
+      dept.employees.filter(emp=>emp.fixedRestDays&&emp.fixedRestDays.length>=restPerWeek).map(emp=>emp.id)
+    );
 
-    // un dipendente "conta" per un giorno se è attivo (in contratto) quel giorno e non è in ferie
-    function countsOnDay(emp, dateStr){
-      return isEmployeeActive(emp, dateStr) && emp.status[dateStr] !== 'ferie';
-    }
+    // CRITICAL ROLES
+    const CRITICAL_ROLES=['responsabile','vice','pasticcere','consegne_pomeriggio','forni','forni_bis'];
 
-    // giorno successivo/precedente come stringa "YYYY-MM-DD"
-    function adjacentDate(dateStr, delta){
-      const d = parseDateStr(dateStr);
-      d.setDate(d.getDate()+delta);
-      return dateToStr(d);
-    }
+    // Rotazione weekend
+    const weekendRestCount={};
+    dept.employees.forEach(emp=>{ weekendRestCount[emp.id]=0; });
 
-    function isMonday(dateStr){
-      return parseDateStr(dateStr).getDay()===1;
-    }
+    function assignOneRest(emp,candidates,restCount,weekIndex,empIdx,lastRest,roleBlockedDays,softAvoidDays,totalEligible,empRotIdx,weekSat,roundIdx){
+      if(candidates.length===0) return null;
+      const _soft=softAvoidDays||new Set();
 
-    // ultimo giorno di riposo assegnato per ciascun dipendente (per controllo adiacenza tra settimane)
-    const lastRestDate = {};
-
-    weeks.forEach(weekDates=>{
-      // dipendenti che lavorano almeno un giorno questa settimana (attivi e non in ferie tutta la settimana)
-      const eligibleEmployees = dept.employees.filter(emp=>{
-        return weekDates.some(d=> countsOnDay(emp, d));
+      const preferredDays=candidates.filter(d=>!isSaturday(d));
+      const satCandidate=candidates.find(d=>isSaturday(d))||null;
+      const roleOkPref=preferredDays.filter(d=>!roleBlockedDays.has(d));
+      const roleWasForced=roleOkPref.length===0&&preferredDays.length>0;
+      const basePref=roleOkPref.length>0?roleOkPref:preferredDays;
+      const nonAdj=basePref.filter(d=>{
+        if(!lastRest) return true;
+        return d!==adjDate(lastRest,1)&&d!==adjDate(lastRest,-1)&&d!==lastRest;
       });
 
-      if(eligibleEmployees.length===0) return;
+      function pickBest(pool){
+        if(pool.length===0) return null;
+        const n=pool.length, so=(weekIndex*3+empIdx)%n;
+        const rot=[];
+        for(let i=0;i<n;i++) rot.push(pool[(empIdx+so+i)%n]);
+        function valid(skipMon){ return rot.filter(d=>restCount[d]<dayCap(d)&&!(skipMon&&dept.avoidMonday&&isMonday(d))); }
+        let c2=valid(true); if(c2.length===0) c2=valid(false); if(c2.length===0) return null;
+        const pref=c2.filter(d=>!_soft.has(d));
+        const working=pref.length>0?pref:c2;
+        const safe=Math.max(1,Math.min(dept.maxRestPerDay,totalEligible||1));
+        const slot=(empRotIdx+weekIndex)%(totalEligible||1);
+        const wkTurn=slot<safe;
+        if(wkTurn){ const wp=working.find(d=>isWeekendDay(d)); if(wp) return wp; }
+        else{ const nwp=working.find(d=>!isWeekendDay(d)); if(nwp) return nwp; }
+        return working[0];
+      }
 
-      // contatore riposi già assegnati per giorno in questa settimana
-      const restCount = {};
-      weekDates.forEach(d=> restCount[d]=0);
+      let chosen=pickBest(nonAdj);
+      if(!chosen) chosen=pickBest(basePref);
 
-      // rotazione: punto di partenza diverso per settimana per distribuire equamente nel periodo
-      const weekIndex = weeks.indexOf(weekDates);
-      let startOffset = weekIndex % weekDates.length;
-
-      eligibleEmployees.forEach((emp, idx)=>{
-        // giorni candidati per questo dipendente: deve essere attivo e lavorare quel giorno (non ferie)
-        let candidates = weekDates.filter(d=> countsOnDay(emp, d));
-        if(candidates.length===0) return;
-
-        // escludi i giorni adiacenti all'ultimo riposo assegnato (no due riposi consecutivi)
-        const prevRest = lastRestDate[emp.id];
-        const nonAdjacent = candidates.filter(d=>{
-          if(!prevRest) return true;
-          return d !== adjacentDate(prevRest, 1) && d !== adjacentDate(prevRest, -1) && d !== prevRest;
-        });
-        const pool0 = nonAdjacent.length>0 ? nonAdjacent : candidates;
-
-        // rispetta il tetto massimo di riposi/giorno: tieni solo i giorni con slot disponibili
-        const withinCap = pool0.filter(d=> restCount[d] < dept.maxRestPerDay);
-        const pool = withinCap.length>0 ? withinCap : pool0;
-
-        // punteggio: slot rimanenti nel giorno (più alto è meglio), con eventuale malus lunedì
-        const MONDAY_PENALTY = 1000;
-        const scored = pool.map(d=>{
-          const remaining = dept.maxRestPerDay - restCount[d];
-          const score = remaining - (dept.avoidMonday && isMonday(d) ? MONDAY_PENALTY : 0);
-          return {d, remaining, score};
-        });
-
-        // preferenza di rotazione: ruota l'ordine dei giorni candidati
-        const rotated = [];
-        const n = pool.length;
-        for(let i=0;i<n;i++){
-          rotated.push(pool[(idx + startOffset + i) % n]);
+      let usedSat=false;
+      if(!chosen&&satCandidate&&countsOnDay(emp,satCandidate)&&restCount[satCandidate]<dayCap(satCandidate)){
+        chosen=satCandidate; usedSat=true;
+      }
+      if(!chosen&&satCandidate&&countsOnDay(emp,satCandidate)){
+        chosen=satCandidate; usedSat=true;
+      }
+      if(!chosen){
+        const fb=nonAdj.length>0?nonAdj:(basePref.length>0?basePref:(preferredDays.length>0?preferredDays:(satCandidate?[satCandidate]:[])));
+        if(fb.length>0){
+          let best=fb[0],br=dayCap(best)-restCount[best];
+          fb.forEach(d=>{ const r=dayCap(d)-restCount[d]; if(r>br){best=d;br=r;} });
+          chosen=best;
+          issues.push({week:weekIndex+1,date:chosen,reason:'max-riposi-superato'});
         }
+      }
+      if(chosen&&roleWasForced&&!usedSat) issues.push({week:weekIndex+1,date:chosen,reason:'copertura-ruolo-non-garantita'});
+      return chosen;
+    }
 
-        // scegli il primo giorno (in ordine di rotazione) con slot disponibili e che non sia lunedì
-        // (se avoidMonday è attivo per il reparto)
-        let chosen = null;
-        for(const d of rotated){
-          const sc = scored.find(s=>s.d===d);
-          if(sc.remaining > 0 && !(dept.avoidMonday && isMonday(d))){ chosen = d; break; }
-        }
-        // se nessuno soddisfa slot-disponibili e non-lunedì, accetta slot disponibili anche di lunedì
-        if(!chosen){
-          for(const d of rotated){
-            const sc = scored.find(s=>s.d===d);
-            if(sc.remaining > 0){ chosen = d; break; }
-          }
-        }
-        // come ultima risorsa, scegli il punteggio più alto (supera il tetto massimo: segnala criticità)
-        if(!chosen){
-          let best = scored[0];
-          rotated.forEach(d=>{
-            const sc = scored.find(s=>s.d===d);
-            if(sc.score > best.score) best = sc;
-          });
-          chosen = best.d;
-          if(best.remaining <= 0){
-            issues.push({week: weekIndex+1, date: chosen, reason: 'max-riposi-superato'});
-          }
-        }
+    const lastRestDate={};
 
-        emp.status[chosen] = 'riposo';
-        restCount[chosen]++;
-        lastRestDate[emp.id] = chosen;
+    weeks.forEach((weekDates,weekIndex)=>{
+      const eligible=dept.employees.filter(emp=>weekDates.some(d=>countsOnDay(emp,d)));
+      if(eligible.length===0) return;
+
+      const weekSat=weekDates.find(d=>isSaturday(d))||null;
+
+      // restCount inizializzato tenendo conto dei riposi fissi già pre-assegnati
+      const restCount={};
+      weekDates.forEach(d=>restCount[d]=0);
+      dept.employees.forEach(emp=>{
+        weekDates.forEach(d=>{ if(emp.status[d]==='riposo') restCount[d]++; });
       });
-    });
 
-    return buildCoverageReport(dept, weeks, issues);
-  }
+      const roleAvailable={};
+      CRITICAL_ROLES.forEach(role=>{
+        roleAvailable[role]={};
+        weekDates.forEach(d=>{
+          roleAvailable[role][d]=dept.employees.filter(e=>e.role===role&&countsOnDay(e,d)).length;
+        });
+      });
 
-  function buildCoverageReport(dept, weeks, issues){
-    const dates = getPeriodDates();
+      const ROLE_ORDER=['responsabile','vice','pasticcere','forni','forni_bis','consegne_pomeriggio'];
+      const ordered=[
+        ...ROLE_ORDER.flatMap(role=>eligible.filter(e=>e.role===role&&!skipInAutoGen.has(e.id))),
+        ...eligible.filter(e=>!ROLE_ORDER.includes(e.role)&&!skipInAutoGen.has(e.id))
+      ];
 
-    const critical = [];
-    dates.forEach(dateStr=>{
-      const restCount = dept.employees.filter(emp=> {
-        return isEmployeeActive(emp, dateStr) && emp.status[dateStr]==='riposo';
-      }).length;
-      if(restCount > dept.maxRestPerDay){
-        critical.push({date: dateStr, present: restCount, required: dept.maxRestPerDay});
+      const assignedMap={};
+      ordered.forEach(emp=>{ assignedMap[emp.id]=[]; });
+
+      for(let round=0;round<restPerWeek;round++){
+        ordered.forEach((emp,empIdx)=>{
+          const baseCand=weekDates.filter(d=>countsOnDay(emp,d));
+          const assigned=assignedMap[emp.id];
+          const roleBlocked=new Set();
+          const softAvoid=new Set();
+
+          if(CRITICAL_ROLES.includes(emp.role)){
+            weekDates.forEach(d=>{ if(roleAvailable[emp.role][d]<=1) roleBlocked.add(d); });
+          }
+          if(emp.role==='responsabile'||emp.role==='vice'){
+            // Rigido: mai di lunedì
+            weekDates.forEach(d=>{ if(isMonday(d)) roleBlocked.add(d); });
+            // Morbido: evita giorni in cui il ruolo gemello è già a riposo
+            const gem=emp.role==='responsabile'?'vice':'responsabile';
+            const gemTot=dept.employees.filter(e=>e.role===gem).length;
+            weekDates.forEach(d=>{ if(roleAvailable[gem]&&roleAvailable[gem][d]<gemTot) softAvoid.add(d); });
+          }
+          if(emp.role==='pasticcere'){
+            const ptot=dept.employees.filter(e=>e.role==='pasticcere').length;
+            weekDates.forEach(d=>{ if(roleAvailable['pasticcere']&&roleAvailable['pasticcere'][d]<ptot) softAvoid.add(d); });
+          }
+          // Coppia: non riposare stesso giorno del partner
+          if(emp.pairWith){
+            const partner=dept.employees.find(e=>e.name===emp.pairWith);
+            if(partner) weekDates.forEach(d=>{ if(partner.status[d]==='riposo') roleBlocked.add(d); });
+          }
+
+          const remaining=baseCand.filter(d=>!assigned.includes(d));
+          if(remaining.length===0) return;
+
+          const chosen=assignOneRest(emp,remaining,restCount,weekIndex,empIdx+round*100,lastRestDate[emp.id],roleBlocked,softAvoid,ordered.length,empIdx,weekSat,round);
+          if(!chosen) return;
+
+          emp.status[chosen]='riposo';
+          restCount[chosen]++;
+          lastRestDate[emp.id]=chosen;
+          assigned.push(chosen);
+          if(isWeekendDay(chosen)) weekendRestCount[emp.id]++;
+          if(CRITICAL_ROLES.includes(emp.role)) roleAvailable[emp.role][chosen]--;
+        });
       }
     });
 
-    return {critical, totalEmployees: dept.employees.length};
+    return buildCoverageReport(dept,weeks,issues);
   }
 
-  // ---------- Export / Import ----------
-  function exportState(){
-    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'prospetto-turni.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    flashStatus('File esportato');
+  // ---------- Coverage Report ----------
+  function buildCoverageReport(dept,weeks,issues){
+    const dates=getPeriodDates();
+    const CRITICAL_ROLES=['responsabile','vice','pasticcere','consegne_pomeriggio','forni','forni_bis'];
+
+    const critical=[];
+    dates.forEach(ds=>{
+      const isSat=parseDateStr(ds).getDay()===6;
+      const cap=isSat?(dept.saturdayMaxRest!==undefined?dept.saturdayMaxRest:dept.maxRestPerDay):dept.maxRestPerDay;
+      const rc=dept.employees.filter(emp=>isEmployeeActive(emp,ds)&&emp.status[ds]==='riposo').length;
+      if(rc>cap) critical.push({date:ds,present:rc,required:cap});
+    });
+
+    const roleGaps=[];
+    CRITICAL_ROLES.forEach(role=>{
+      const hasRole=dept.employees.some(emp=>emp.role===role);
+      if(!hasRole) return;
+      dates.forEach(ds=>{
+        const cnt=dept.employees.filter(emp=>emp.role===role&&isEmployeeActive(emp,ds)&&emp.status[ds]!=='riposo'&&emp.status[ds]!=='ferie').length;
+        if(cnt<1) roleGaps.push({date:ds,role,present:cnt,required:1});
+      });
+    });
+
+    return {critical,roleGaps,totalEmployees:dept.employees.length};
   }
 
-  function importState(file){
-    const reader = new FileReader();
-    reader.onload = e=>{
-      try{
-        const parsed = JSON.parse(e.target.result);
-        if(parsed && Array.isArray(parsed.departments)){
-          state = normalizeState(parsed);
-          render();
-          flashStatus('File importato');
+  // ---------- Render Coverage ----------
+  function renderCoverageReport(block,report){
+    const el=block.querySelector('[data-report]');
+    if(!el) return;
+    if(!report){el.innerHTML='';return;}
+    const ROLE_LABEL={responsabile:'Responsabile',vice:'Vice responsabile',pasticcere:'Pasticcere',consegne_pomeriggio:'Consegne Pomeriggio',forni:'Forni',forni_bis:'Forni Bis'};
+    let html='';
+    if(report.critical.length===0){
+      html+=`<span class="ok-msg">✓ Massimo riposi/giorno rispettato per tutti i giorni del periodo.</span>`;
+    }else{
+      html+=`<span class="warn-msg">⚠ Limite massimo riposi superato in ${report.critical.length} giorno/i:</span><ul>`;
+      report.critical.forEach(c=>{ html+=`<li>${formatDateShort(c.date)}: ${c.present} riposi su massimo ${c.required} consentiti</li>`; });
+      html+=`</ul>`;
+    }
+    const rg=report.roleGaps||[];
+    if(rg.length>0){
+      html+=`<div style="margin-top:8px"><span class="warn-msg">⚠ Copertura ruoli mancante in ${rg.length} caso/i:</span><ul>`;
+      rg.forEach(g=>{ html+=`<li>${formatDateShort(g.date)}: ${ROLE_LABEL[g.role]||g.role} — ${g.present!==undefined?g.present+' presenti (min '+g.required+' richiesti)':'nessuno presente'}</li>`; });
+      html+=`</ul><span style="color:var(--muted)">Verifica manualmente i riposi/ferie di quel giorno per quel ruolo.</span></div>`;
+    }else if(report.critical.length===0){
+      html+=`<div style="margin-top:4px"><span class="ok-msg">✓ Copertura ruoli garantita ogni giorno.</span></div>`;
+    }
+    el.innerHTML=html;
+  }
+
+  // ---------- Render Dept ----------
+  const DAY_NAMES=['DOM','LUN','MAR','MER','GIO','VEN','SAB'];
+
+  function renderDept(dept,dates){
+    if(typeof dept.maxRestPerDay!=='number') dept.maxRestPerDay=1;
+    if(typeof dept.saturdayMaxRest!=='number') dept.saturdayMaxRest=dept.maxRestPerDay;
+    if(typeof dept.avoidMonday!=='boolean') dept.avoidMonday=true;
+    if(typeof dept.saturdayOverflow!=='boolean') dept.saturdayOverflow=false;
+
+    let html=`<div class="dept-block" data-dept="${dept.id}">`;
+    html+=`<div class="dept-header">`;
+    html+=`<input type="text" class="dept-name" value="${escapeHtml(dept.name)}" maxlength="40">`;
+    html+=`<button class="add-emp-btn">+ Dipendente</button>`;
+    html+=`<button class="del-dept">Elimina reparto</button>`;
+    html+=`</div>`;
+
+    html+=`<div class="dept-settings">`;
+    html+=`<label>Max riposi/gg (lun-ven+dom): <input type="number" class="max-rest" min="0" max="${dept.employees.length}" value="${dept.maxRestPerDay}"></label>`;
+    html+=`<label>Max riposi sabato: <input type="number" class="saturday-max-rest" min="0" max="${dept.employees.length}" value="${dept.saturdayMaxRest}"></label>`;
+    html+=`<label>Riposi/settimana: <input type="number" class="rest-per-week" min="1" max="7" value="${dept.restDaysPerWeek||2}"></label>`;
+    html+=`<label class="checkbox-label"><input type="checkbox" class="avoid-monday" ${dept.avoidMonday?'checked':''}> Evita lunedì</label>`;
+    html+=`<label class="checkbox-label"><input type="checkbox" class="saturday-overflow" ${dept.saturdayOverflow?'checked':''}> Sabato ultima priorità</label>`;
+    html+=`<span class="mode-hint">${dept.restDaysPerWeek||2} riposi/sett · no riposi consecutivi · ferie escluse${dept.saturdayOverflow?' · sabato riempito per ultimo':''}</span>`;
+    html+=`<button class="generate">Genera riposi del periodo</button>`;
+    html+=`</div>`;
+
+    html+=`<div class="coverage-report" data-report></div>`;
+
+    // Tabella
+    html+=`<div class="grid-wrap"><table class="roster">`;
+    html+=`<thead><tr><th class="name-cell" style="position:sticky;left:0;z-index:3;background:var(--paper)">Dipendente / Contratto</th>`;
+    dates.forEach(ds=>{
+      const d=parseDateStr(ds);
+      const dow=d.getDay();
+      const isWe=(dow===0||dow===6);
+      html+=`<th class="${isWe?'weekend':''} daynum dow-${dow}">${d.getDate()}<br>${DAY_NAMES[dow]}</th>`;
+    });
+    html+=`</tr></thead><tbody>`;
+
+    // Ordinamento dipendenti
+    const DISPLAY_ORDER=['responsabile','vice','pasticcere','forni','forni_bis','consegne_pomeriggio'];
+    const sorted=[
+      ...DISPLAY_ORDER.flatMap(role=>dept.employees.filter(e=>e.role===role)),
+      ...dept.employees.filter(e=>!DISPLAY_ORDER.includes(e.role))
+    ];
+
+    sorted.forEach(emp=>{
+      html+=`<tr data-emp="${emp.id}" data-role="${emp.role||'operatore'}">`;
+      html+=`<td class="name-cell">`;
+      html+=`<input type="text" class="emp-name" value="${escapeHtml(emp.name)}" placeholder="Nome dipendente" maxlength="30">`;
+      html+=`<div class="emp-dates">`;
+      html+=`<select class="emp-role">`;
+      ['operatore','responsabile','vice','pasticcere','consegne_pomeriggio','forni','forni_bis'].forEach(r=>{
+        const labels={operatore:'Operatore',responsabile:'Responsabile',vice:'Vice responsabile',pasticcere:'Pasticcere',consegne_pomeriggio:'Consegne Pom.',forni:'Forni',forni_bis:'Forni Bis'};
+        html+=`<option value="${r}" ${emp.role===r?'selected':''}>${labels[r]}</option>`;
+      });
+      html+=`</select></div>`;
+      html+=`<div class="emp-dates">`;
+      html+=`<label>Da <input type="date" class="emp-hire" value="${emp.hireDate||''}"></label>`;
+      html+=`<label>A <input type="date" class="emp-end" value="${emp.endDate||''}"></label>`;
+      html+=`</div>`;
+      // Giorni fissi
+      html+=`<div class="emp-dates">`;
+      html+=`<span style="font-size:9px;color:var(--muted)">Riposi fissi:</span>`;
+      [1,2,3,4,5,6,0].forEach(dow=>{
+        const dn=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+        const checked=(emp.fixedRestDays||[]).includes(dow)?'checked':'';
+        html+=`<label style="font-size:9px;margin-left:3px"><input type="checkbox" class="fixed-rest-day" data-dow="${dow}" ${checked}>${dn[dow]}</label>`;
+      });
+      html+=`</div>`;
+      // Coppia
+      html+=`<div class="emp-dates">`;
+      html+=`<label style="font-size:9px;color:var(--muted)">Mai assente con: <input type="text" class="emp-pair" style="font-size:9px;width:80px;padding:1px 3px" value="${escapeHtml(emp.pairWith||'')}" placeholder="Nome collega"></label>`;
+      html+=`</div>`;
+      html+=`<button class="del-row" title="Rimuovi">×</button>`;
+      html+=`</td>`;
+
+      dates.forEach(ds=>{
+        const d=parseDateStr(ds);
+        const dow=d.getDay();
+        const isWe=(dow===0||dow===6);
+        const active=isEmployeeActive(emp,ds);
+        if(!active){
+          html+=`<td class="daycell inactive ${isWe?'weekend':''} dow-${dow}" data-date="${ds}"></td>`;
         }else{
-          flashStatus('File non valido');
+          const st=emp.status[ds]||'';
+          html+=`<td class="daycell ${st} ${isWe?'weekend':''} dow-${dow}" data-date="${ds}"></td>`;
         }
-      }catch(err){
-        flashStatus('Errore nella lettura del file');
-      }
+      });
+      html+=`</tr>`;
+    });
+    html+=`</tbody></table></div>`;
+    html+=`</div>`;
+    return html;
+  }
+
+  function renderForDept(block,dept){
+    const dates=getPeriodDates();
+    block.outerHTML=renderDept(dept,dates);
+    const newBlock=document.querySelector(`[data-dept="${dept.id}"]`);
+    attachListeners(newBlock,dept);
+    const report=buildCoverageReport(dept,null,[]);
+    renderCoverageReport(newBlock,report);
+  }
+
+  function render(){
+    const dates=getPeriodDates();
+    document.getElementById('daysCount').textContent=`${dates.length} giorni · ~${Math.round(dates.length/7)} settimane`;
+    const container=document.getElementById('deptContainer');
+    container.innerHTML=state.departments.map(dept=>renderDept(dept,dates)).join('');
+    state.departments.forEach(dept=>{
+      const block=container.querySelector(`[data-dept="${dept.id}"]`);
+      attachListeners(block,dept);
+      const report=buildCoverageReport(dept,null,[]);
+      renderCoverageReport(block,report);
+    });
+  }
+
+  function attachListeners(block,dept){
+    const deptId=dept.id;
+
+    block.querySelector('.dept-name').addEventListener('change',e=>{ renameDepartment(deptId,e.target.value); });
+    block.querySelector('.add-emp-btn').addEventListener('click',()=>{ addEmployee(deptId); });
+    block.querySelector('.del-dept').addEventListener('click',()=>{ if(confirm('Eliminare il reparto?')) removeDepartment(deptId); });
+    block.querySelector('.max-rest').addEventListener('change',e=>{ setMaxRestPerDay(deptId,e.target.value); renderForDept(block,dept); });
+    block.querySelector('.saturday-max-rest').addEventListener('change',e=>{ setSaturdayMaxRest(deptId,e.target.value); renderForDept(block,dept); });
+    block.querySelector('.rest-per-week').addEventListener('change',e=>{ setRestDaysPerWeek(deptId,e.target.value); renderForDept(block,dept); });
+    block.querySelector('.avoid-monday').addEventListener('change',e=>{ setAvoidMonday(deptId,e.target.checked); });
+    block.querySelector('.saturday-overflow').addEventListener('change',e=>{ setSaturdayOverflow(deptId,e.target.checked); renderForDept(block,dept); });
+    block.querySelector('.generate').addEventListener('click',()=>{
+      const report=generateRestDays(deptId);
+      renderForDept(block,dept);
+    });
+
+    block.querySelectorAll('tr[data-emp]').forEach(row=>{
+      const empId=row.dataset.emp;
+      row.querySelector('.emp-name').addEventListener('change',e=>{ renameEmployee(deptId,empId,e.target.value); });
+      row.querySelector('.emp-role').addEventListener('change',e=>{ setEmployeeRole(deptId,empId,e.target.value); row.dataset.role=e.target.value; });
+      row.querySelector('.emp-hire').addEventListener('change',e=>{ setEmployeeHireDate(deptId,empId,e.target.value); renderForDept(block,dept); });
+      row.querySelector('.emp-end').addEventListener('change',e=>{ setEmployeeEndDate(deptId,empId,e.target.value); renderForDept(block,dept); });
+      row.querySelectorAll('.fixed-rest-day').forEach(cb=>{
+        cb.addEventListener('change',()=>{
+          const d=state.departments.find(x=>x.id===deptId);
+          const emp=d&&d.employees.find(e=>e.id===empId);
+          if(!emp) return;
+          const checked=[];
+          row.querySelectorAll('.fixed-rest-day').forEach(c=>{ if(c.checked) checked.push(parseInt(c.dataset.dow)); });
+          emp.fixedRestDays=checked;
+          notifyChange();
+        });
+      });
+      row.querySelector('.emp-pair').addEventListener('change',e=>{
+        const d=state.departments.find(x=>x.id===deptId);
+        const emp=d&&d.employees.find(e=>e.id===empId);
+        if(emp){ emp.pairWith=e.target.value.trim()||null; notifyChange(); }
+      });
+      row.querySelector('.del-row').addEventListener('click',()=>{ removeEmployee(deptId,empId); });
+      row.querySelectorAll('td.daycell').forEach(cell=>{
+        if(cell.classList.contains('inactive')) return;
+        cell.addEventListener('click',()=>{
+          const next=cycleStatus(deptId,empId,cell.dataset.date);
+          if(next===undefined) return;
+          cell.classList.remove('riposo','ferie');
+          if(next) cell.classList.add(next);
+          const report=buildCoverageReport(dept,null,[]);
+          renderCoverageReport(block,report);
+          notifyChange();
+        });
+      });
+    });
+  }
+
+  // ---------- Events ----------
+  const periodStartInput=document.getElementById('periodStart');
+  const periodEndInput=document.getElementById('periodEnd');
+  periodStartInput.value=dateToStr(periodStart);
+  periodEndInput.value=dateToStr(periodEnd);
+  periodStartInput.addEventListener('change',e=>{ if(!e.target.value)return; periodStart=parseDateStr(e.target.value); render(); });
+  periodEndInput.addEventListener('change',e=>{ if(!e.target.value)return; periodEnd=parseDateStr(e.target.value); render(); });
+
+  document.getElementById('addDeptBtn').addEventListener('click',addDepartment);
+
+  document.getElementById('shareBtn').addEventListener('click',()=>{
+    navigator.clipboard.writeText(window.location.href).then(()=>alert('Link copiato negli appunti!')).catch(()=>prompt('Copia questo link:',window.location.href));
+  });
+
+  document.getElementById('exportPdfBtn').addEventListener('click',()=>{
+    const s=document.createElement('style');
+    s.id='__print_override__';
+    s.textContent='@page{size:A3 landscape;margin:6mm 4mm;}';
+    document.head.appendChild(s);
+    window.print();
+    setTimeout(()=>{ const x=document.getElementById('__print_override__'); if(x)x.remove(); },1000);
+  });
+
+  document.getElementById('exportJsonBtn').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify({state,periodStart:dateToStr(periodStart),periodEnd:dateToStr(periodEnd)},null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='turni.json'; a.click();
+  });
+
+  document.getElementById('importJsonInput').addEventListener('change',e=>{
+    const file=e.target.files[0]; if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const data=JSON.parse(ev.target.result);
+        if(data.state) state=normalizeState(data.state);
+        else if(data.departments) state=normalizeState(data);
+        if(data.periodStart) periodStart=parseDateStr(data.periodStart);
+        if(data.periodEnd) periodEnd=parseDateStr(data.periodEnd);
+        periodStartInput.value=dateToStr(periodStart);
+        periodEndInput.value=dateToStr(periodEnd);
+        render();
+      }catch(err){ alert('Errore nel file JSON: '+err.message); }
     };
     reader.readAsText(file);
-  }
+    e.target.value='';
+  });
 
-  // garantisce che ogni reparto/dipendente abbia i campi richiesti dalla versione corrente
-  // (utile per importare file salvati con versioni precedenti dell'app)
   function normalizeState(s){
     s.departments.forEach(dept=>{
-      if(typeof dept.maxRestPerDay !== 'number'){
-        // migrazione da versioni precedenti basate su minCoverage
-        dept.maxRestPerDay = 1;
-      }
-      if(typeof dept.avoidMonday !== 'boolean') dept.avoidMonday = true;
+      if(typeof dept.maxRestPerDay!=='number') dept.maxRestPerDay=1;
+      if(typeof dept.saturdayMaxRest!=='number') dept.saturdayMaxRest=dept.maxRestPerDay;
+      if(typeof dept.restDaysPerWeek!=='number') dept.restDaysPerWeek=2;
+      if(typeof dept.avoidMonday!=='boolean') dept.avoidMonday=true;
+      if(typeof dept.saturdayOverflow!=='boolean') dept.saturdayOverflow=false;
       delete dept.minCoverage;
       (dept.employees||[]).forEach(emp=>{
-        if(!emp.status) emp.status = emp.rest ? emp.rest : {};
-        if(emp.hireDate === undefined) emp.hireDate = '';
-        if(emp.endDate === undefined) emp.endDate = '';
+        if(!emp.status) emp.status={};
+        if(emp.hireDate===undefined) emp.hireDate='';
+        if(emp.endDate===undefined) emp.endDate='';
+        if(emp.role===undefined) emp.role='operatore';
+        if(emp.fixedRestDays===undefined) emp.fixedRestDays=[];
+        if(emp.pairWith===undefined) emp.pairWith=null;
       });
     });
     return s;
   }
 
-  // ---------- Render ----------
-  // Hook per la sincronizzazione (viene sovrascritta da Firebase se configurato)
-  let notifyChange = function(){};
-
-  function render(){
-    const dates = getPeriodDates();
-    if(dates.length>0){
-      const weeks = Math.ceil(dates.length/7);
-      document.getElementById('monthLabel').textContent = `${dates.length} giorni · ~${weeks} settimane`;
-    }else{
-      document.getElementById('monthLabel').textContent = 'Periodo non valido';
-    }
-
-    const container = document.getElementById('departments');
-
-    if(state.departments.length===0){
-      container.innerHTML = '<div class="empty-state">Nessun reparto. Aggiungi un reparto per iniziare.</div>';
-      notifyChange();
-      return;
-    }
-
-    if(dates.length===0){
-      container.innerHTML = '<div class="empty-state">Imposta una data di inizio e una data di fine valide (inizio ≤ fine) per visualizzare il prospetto.</div>';
-      notifyChange();
-      return;
-    }
-
-    let html = '';
-    state.departments.forEach(dept=>{
-      html += renderDept(dept, dates);
-    });
-    container.innerHTML = html;
-
-    attachListeners();
-    notifyChange();
-  }
-
-  function renderDept(dept, dates){
-    if(typeof dept.maxRestPerDay !== 'number') dept.maxRestPerDay = 1;
-    if(typeof dept.avoidMonday !== 'boolean') dept.avoidMonday = true;
-
-    let html = `<div class="dept-block" data-dept="${dept.id}">`;
-    html += `<div class="dept-header">`;
-    html += `<input type="text" class="dept-name" value="${escapeHtml(dept.name)}" maxlength="40">`;
-    html += `<button class="add-emp-btn">+ Dipendente</button>`;
-    html += `<button class="del-dept">Elimina reparto</button>`;
-    html += `</div>`;
-
-    html += `<div class="dept-settings">`;
-    html += `<label>Massimo riposi al giorno: <input type="number" class="max-rest" min="0" max="${dept.employees.length}" value="${dept.maxRestPerDay}"></label>`;
-    html += `<label class="checkbox-label"><input type="checkbox" class="avoid-monday" ${dept.avoidMonday?'checked':''}> Evita il lunedì come riposo</label>`;
-    html += `<span class="mode-hint">1 riposo/settimana · no riposi consecutivi · ferie/fuori contratto esclusi</span>`;
-    html += `<button class="generate">Genera riposi del periodo</button>`;
-    html += `</div>`;
-
-    html += `<div class="grid-wrap"><table class="roster">`;
-    html += `<thead><tr><th class="name-cell" style="position:sticky;left:0;z-index:3;background:var(--paper);">Dipendente / Contratto</th>`;
-    dates.forEach(dateStr=>{
-      const d = parseDateStr(dateStr);
-      const dow = d.getDay();
-      const isWeekend = (dow===0 || dow===6);
-      html += `<th class="${isWeekend?'weekend':''} daynum">${d.getDate()}<br>${DAY_NAMES[dow]}</th>`;
-    });
-    html += `</tr></thead><tbody>`;
-
-    dept.employees.forEach(emp=>{
-      html += `<tr data-emp="${emp.id}">`;
-      html += `<td class="name-cell">`;
-      html += `<input type="text" class="emp-name" value="${escapeHtml(emp.name)}" placeholder="Nome dipendente" maxlength="30">`;
-      html += `<div class="emp-dates">`;
-      html += `<label>Da <input type="date" class="emp-hire" value="${emp.hireDate||''}"></label>`;
-      html += `<label>A <input type="date" class="emp-end" value="${emp.endDate||''}"></label>`;
-      html += `</div>`;
-      html += `<button class="del-row" title="Rimuovi dipendente">×</button>`;
-      html += `</td>`;
-      dates.forEach(dateStr=>{
-        const d = parseDateStr(dateStr);
-        const dow = d.getDay();
-        const isWeekend = (dow===0 || dow===6);
-        const active = isEmployeeActive(emp, dateStr);
-        if(!active){
-          html += `<td class="daycell inactive ${isWeekend?'weekend':''}" data-date="${dateStr}"></td>`;
-        }else{
-          const st = emp.status[dateStr];
-          const stClass = st ? st : '';
-          html += `<td class="daycell ${stClass} ${isWeekend?'weekend':''}" data-date="${dateStr}"></td>`;
-        }
-      });
-      html += `</tr>`;
-    });
-
-    html += `</tbody></table></div>`;
-
-    html += `<div class="coverage-report" data-report></div>`;
-
-    html += `</div>`;
-    return html;
-  }
-
-  function formatDateShort(dateStr){
-    const d = parseDateStr(dateStr);
-    const dow = DAY_NAMES[d.getDay()];
-    return `${dow} ${d.getDate()}/${d.getMonth()+1}`;
-  }
-
-  function renderCoverageReport(block, report){
-    const el = block.querySelector('[data-report]');
-    if(!report){
-      el.innerHTML = '';
-      return;
-    }
-    if(report.critical.length===0){
-      el.innerHTML = `<span class="ok-msg">✓ Massimo riposi/giorno rispettato per tutti i giorni del periodo.</span>`;
-    }else{
-      let html = `<span class="warn-msg">⚠ Limite massimo riposi superato in ${report.critical.length} giorno/i:</span><ul>`;
-      report.critical.forEach(c=>{
-        html += `<li>${formatDateShort(c.date)}: ${c.present} riposi su massimo ${c.required} consentiti</li>`;
-      });
-      html += `</ul><span style="color:var(--muted);">Riduci i riposi assegnati manualmente in quei giorni, o aumenta il limite massimo per il reparto.</span>`;
-      el.innerHTML = html;
-    }
-  }
-
-  function attachListeners(){
-    document.querySelectorAll('.dept-block').forEach(block=>{
-      attachListenersForBlock(block);
-    });
-  }
-
-  // helper: rigenera l'intero blocco DOM di un reparto dopo un'azione che modifica i riposi
-  function renderForDept(block, dept){
-    const dates = getPeriodDates();
-    const newHtml = renderDept(dept, dates);
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = newHtml;
-    const newBlock = wrapper.firstElementChild;
-    block.replaceWith(newBlock);
-    attachListenersForBlock(newBlock);
-    notifyChange();
-  }
-
-  // riattacca i listener a un singolo blocco reparto (usato dopo renderForDept)
-  function attachListenersForBlock(block){
-    const deptId = block.dataset.dept;
-    const dept = state.departments.find(d=>d.id===deptId);
-
-    block.querySelector('.dept-name').addEventListener('change', e=>{
-      renameDepartment(deptId, e.target.value.trim() || 'Reparto');
-      render();
-    });
-
-    block.querySelector('.add-emp-btn').addEventListener('click', ()=>{
-      addEmployee(deptId);
-    });
-
-    block.querySelector('.del-dept').addEventListener('click', ()=>{
-      removeDepartment(deptId);
-    });
-
-    block.querySelector('.max-rest').addEventListener('change', e=>{
-      setMaxRestPerDay(deptId, e.target.value);
-      renderForDept(block, dept);
-    });
-
-    block.querySelector('.avoid-monday').addEventListener('change', e=>{
-      setAvoidMonday(deptId, e.target.checked);
-    });
-
-    block.querySelector('.generate').addEventListener('click', ()=>{
-      generateRestDays(deptId);
-      renderForDept(block, dept);
-    });
-
-    block.querySelectorAll('tr[data-emp]').forEach(row=>{
-      const empId = row.dataset.emp;
-
-      const nameInput = row.querySelector('.emp-name');
-      nameInput.addEventListener('change', e=>{
-        renameEmployee(deptId, empId, e.target.value);
-      });
-
-      const hireInput = row.querySelector('.emp-hire');
-      hireInput.addEventListener('change', e=>{
-        setEmployeeHireDate(deptId, empId, e.target.value);
-        renderForDept(block, dept);
-      });
-
-      const endInput = row.querySelector('.emp-end');
-      endInput.addEventListener('change', e=>{
-        setEmployeeEndDate(deptId, empId, e.target.value);
-        renderForDept(block, dept);
-      });
-
-      const delBtn = row.querySelector('.del-row');
-      delBtn.addEventListener('click', ()=>{
-        removeEmployee(deptId, empId);
-      });
-
-      row.querySelectorAll('td.daycell').forEach(cell=>{
-        if(cell.classList.contains('inactive')) return; // fuori contratto, non cliccabile
-        cell.addEventListener('click', ()=>{
-          const next = cycleStatus(deptId, empId, cell.dataset.date);
-          if(next===undefined) return; // fuori contratto
-          cell.classList.remove('riposo','ferie');
-          if(next) cell.classList.add(next);
-          const report = buildCoverageReport(dept, null, []);
-          renderCoverageReport(block, report);
-          notifyChange();
-        });
-      });
-    });
-
-    const initialReport = buildCoverageReport(dept, null, []);
-    renderCoverageReport(block, initialReport);
-  }
-
-  // ---------- Events ----------
-  const periodStartInput = document.getElementById('periodStart');
-  const periodEndInput = document.getElementById('periodEnd');
-
-  periodStartInput.value = dateToStr(periodStart);
-  periodEndInput.value = dateToStr(periodEnd);
-
-  periodStartInput.addEventListener('change', e=>{
-    if(!e.target.value) return;
-    periodStart = parseDateStr(e.target.value);
-    render();
-  });
-  periodEndInput.addEventListener('change', e=>{
-    if(!e.target.value) return;
-    periodEnd = parseDateStr(e.target.value);
-    render();
-  });
-
-  document.getElementById('shareBtn').addEventListener('click', ()=>{
-    const url = window.location.href.split('?')[0]; // link pulito senza parametri
-    if(navigator.share){
-      // Web Share API: apre il foglio di condivisione nativo su iPhone/Android
-      navigator.share({
-        title: 'Prospetto Turni',
-        text: 'Apri il prospetto turni condiviso:',
-        url: url
-      }).catch(()=>{}); // ignora se l'utente annulla
-    }else{
-      // Fallback: copia negli appunti
-      navigator.clipboard.writeText(url).then(()=>{
-        flashStatus('Link copiato negli appunti!');
-      }).catch(()=>{
-        // Ultimo fallback: mostra il link in un prompt
-        prompt('Copia questo link:', url);
-      });
-    }
-  });
-
-  document.getElementById('addDeptTop').addEventListener('click', addDepartment);
-
-  document.getElementById('exportBtn').addEventListener('click', exportState);
-  document.getElementById('importFile').addEventListener('change', e=>{
-    if(e.target.files && e.target.files[0]){
-      importState(e.target.files[0]);
-      e.target.value='';
-    }
-  });
-
-  document.getElementById('exportPdfBtn').addEventListener('click', ()=>{
-    window.print();
-  });
+  let notifyChange=function(){};
 
   // ---------- Firebase sync ----------
-  const DB_PATH = 'turni/v1';
-  let db = null;
-  let isRemoteUpdate = false;
-  let saveDebounce = null;
+  const DB_PATH='turni/v1';
+  let db=null,isRemoteUpdate=false;
+  const syncEl=document.getElementById('syncStatus');
 
-  function setSyncStatus(status, msg){
-    const dot = document.getElementById('syncDot');
-    const msgEl = document.getElementById('syncMsg');
-    dot.className = 'sync-dot ' + status;
-    msgEl.textContent = msg;
-  }
-
-  function showLoading(visible){
-    const el = document.getElementById('loadingOverlay');
-    el.classList.toggle('visible', visible);
-  }
-
-  function toFirebase(){
-    return JSON.parse(JSON.stringify({
-      state: state,
-      periodStart: dateToStr(periodStart),
-      periodEnd: dateToStr(periodEnd)
-    }));
-  }
-
-  function fromFirebase(data){
-    if(!data) return false;
-    if(data.state && Array.isArray(data.state.departments)){
-      state = normalizeState(data.state);
-    }
-    if(data.periodStart) periodStart = parseDateStr(data.periodStart);
-    if(data.periodEnd)   periodEnd   = parseDateStr(data.periodEnd);
-    return true;
-  }
-
-  function syncPeriodInputs(){
-    const ps = document.getElementById('periodStart');
-    const pe = document.getElementById('periodEnd');
-    if(ps) ps.value = dateToStr(periodStart);
-    if(pe) pe.value = dateToStr(periodEnd);
-  }
-
-  // ---------- Init ----------
-  const configFilled = firebaseConfig.apiKey && firebaseConfig.apiKey !== 'LA_TUA_API_KEY';
-
-  if(!configFilled){
-    setSyncStatus('error', 'Firebase non configurato — modalità locale');
-    render();
-  } else {
-    showLoading(true);
+  function loadFirebase(){
     try{
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.database();
-
-      // Assegna notifyChange: salva su Firebase con debounce
-      notifyChange = function(){
-        if(isRemoteUpdate) return;
-        setSyncStatus('saving', 'Salvataggio…');
-        if(saveDebounce) clearTimeout(saveDebounce);
-        saveDebounce = setTimeout(()=>{
-          db.ref(DB_PATH).set(toFirebase())
-            .then(()=> setSyncStatus('connected', 'Sincronizzato ✓'))
-            .catch(()=> setSyncStatus('error', 'Errore di salvataggio'));
-        }, 800);
-      };
-
-      // Ascolta i cambiamenti in tempo reale (aggiorna tutti gli utenti connessi)
-      db.ref(DB_PATH).on('value', snapshot => {
-        const data = snapshot.val();
-        isRemoteUpdate = true;
-
-        if(!data){
-          // Prima apertura: nessun dato ancora → salva i default
-          db.ref(DB_PATH).set(toFirebase())
-            .then(()=>{
-              showLoading(false);
-              setSyncStatus('connected', 'Connesso ✓');
-              render();
-              setTimeout(()=>{ isRemoteUpdate = false; }, 0);
-            });
-        } else {
-          fromFirebase(data);
-          syncPeriodInputs();
-          showLoading(false);
-          setSyncStatus('connected', 'Sincronizzato ✓');
+      const fbApp=firebase.app();
+      db=firebase.database(fbApp);
+      const ref=db.ref(DB_PATH);
+      ref.once('value',snap=>{
+        const val=snap.val();
+        if(val&&val.state){
+          state=normalizeState(val.state);
+          if(val.periodStart) periodStart=parseDateStr(val.periodStart);
+          if(val.periodEnd) periodEnd=parseDateStr(val.periodEnd);
+          periodStartInput.value=dateToStr(periodStart);
+          periodEndInput.value=dateToStr(periodEnd);
           render();
-          setTimeout(()=>{ isRemoteUpdate = false; }, 0);
+          syncEl.textContent='● Sincronizzato ✓';
+        } else {
+          pushToFirebase();
         }
-      }, err => {
-        showLoading(false);
-        setSyncStatus('error', 'Connessione fallita — controlla la config Firebase');
-        render();
       });
-
-    } catch(err){
-      showLoading(false);
-      setSyncStatus('error', 'Errore: ' + err.message);
-      render();
-    }
+      ref.on('value',snap=>{
+        if(isRemoteUpdate) return;
+        const val=snap.val();
+        if(val&&val.state){
+          isRemoteUpdate=true;
+          state=normalizeState(val.state);
+          if(val.periodStart) periodStart=parseDateStr(val.periodStart);
+          if(val.periodEnd) periodEnd=parseDateStr(val.periodEnd);
+          periodStartInput.value=dateToStr(periodStart);
+          periodEndInput.value=dateToStr(periodEnd);
+          render();
+          syncEl.textContent='● Sincronizzato ✓';
+          setTimeout(()=>{ isRemoteUpdate=false; },200);
+        }
+      });
+      notifyChange=debounce(pushToFirebase,800);
+    }catch(e){ syncEl.textContent=''; }
   }
 
-})();
+  function pushToFirebase(){
+    if(!db) return;
+    db.ref(DB_PATH).set({state,periodStart:dateToStr(periodStart),periodEnd:dateToStr(periodEnd)})
+      .then(()=>{ syncEl.textContent='● Sincronizzato ✓'; })
+      .catch(()=>{ syncEl.textContent='⚠ Errore sync'; });
+  }
+
+  function debounce(fn,ms){ let t; return function(){clearTimeout(t);t=setTimeout(fn,ms);}; }
+
+  render();
+  if(typeof firebase!=='undefined') loadFirebase();
+</script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  try{
+    firebase.initializeApp({
+      apiKey:"AIzaSyExample",
+      authDomain:"turni-app.firebaseapp.com",
+      databaseURL:"https://turni-app-default-rtdb.firebaseio.com",
+      projectId:"turni-app",
+      storageBucket:"turni-app.appspot.com",
+      messagingSenderId:"000000000000",
+      appId:"1:000000000000:web:0000000000000000"
+    });
+    if(typeof loadFirebase==='function') loadFirebase();
+  }catch(e){}
 </script>
 </body>
 </html>
