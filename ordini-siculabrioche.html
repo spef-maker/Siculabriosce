@@ -824,7 +824,7 @@ function renderGrid(){
   // Aggiorna info filtro
   const filterInfo = document.getElementById('gridFilterInfo');
   if(filterInfo) filterInfo.style.display = filteredMode ? 'inline' : 'none';
-  if(filterInfo && filteredMode) filterInfo.textContent = `📅 Filtro attivo: ${gridFilterDate.split('-').reverse().join('/')} — ${rows.length} ordini da tutte le sessioni`;
+  if(filterInfo && filteredMode) filterInfo.textContent = `📅 Filtro attivo: ${gridFilterDate.split('-').reverse().join('/')} — ${rows.length} ordini da tutte le sessioni · vista riepilogativa`;
 
   let bodyRows = rows.map((row,ri)=>{
     let cells = '';
@@ -923,6 +923,14 @@ function renderGrid(){
   </table>`;
 
   wrap.innerHTML = table;
+  // La vista filtrata unisce righe di sessioni diverse: mantenerla in sola lettura
+  // evita che l'indice visualizzato modifichi accidentalmente la sessione attiva.
+  if(filteredMode){
+    wrap.querySelectorAll('input, select, button').forEach(el=>{
+      el.disabled = true;
+      el.title = 'Per modificare, seleziona la sessione dal menu in alto';
+    });
+  }
   renderSessionSelector();
   updateBriocheCounter();
 
@@ -1296,41 +1304,6 @@ document.getElementById('btnConfirmAdd').addEventListener('click', ()=>{
 });
 
 // ══════════════════════════════════════════
-// NEW SESSION
-// ══════════════════════════════════════════
-document.getElementById('btnNewSession').addEventListener('click', ()=>{
-  const date = document.getElementById('sessionDate').value || todayStr();
-  if(!confirm(`Avviare una nuova sessione per il ${fmtDateSimple(date)}?\nLa sessione corrente viene conservata e sarà accessibile dal menu a tendina.`)) return;
-  currentSession = 'ses_'+date.replace(/-/g,'')+'_'+Math.random().toString(36).slice(2,6);
-  orders[currentSession] = { date, rows:[] };
-  renderGrid();
-  renderProduzione();
-  notifyChange();
-});
-
-document.getElementById('sessionSelector').addEventListener('change', function(){
-  const id = this.value;
-  if(!id) return;
-  currentSession = id;
-  renderGrid();
-  renderProduzione();
-});
-
-document.getElementById('btnDeleteSession').addEventListener('click', ()=>{
-  if(!currentSession || !orders[currentSession]) return;
-  const ses = orders[currentSession];
-  const label = fmtDateSimple(ses.date);
-  if(!confirm(`Eliminare definitivamente la sessione "${label}" con ${(ses.rows||[]).length} clienti?\nQuesta azione non può essere annullata.`)) return;
-  delete orders[currentSession];
-  currentSession = null;
-  ensureSession();
-  renderGrid();
-  renderProduzione();
-  notifyChange();
-});
-
-
-// ══════════════════════════════════════════
 // PRODUZIONE
 // ══════════════════════════════════════════
 function renderProduzione(){
@@ -1655,7 +1628,7 @@ function startAutoSave(){
     if(!db || isSaving || saveDebounce) return;
     const hasData = Object.values(orders).some(s=>(s.rows||[]).length>0);
     if(!hasData) return;
-    safeSetFirebase();
+    safeSetFirebase().catch(e=>console.warn('Auto save failed:', e));
   }, 5 * 60 * 1000);
 }
 
@@ -1666,7 +1639,7 @@ window.addEventListener('beforeunload', ()=>{
   // Tenta anche Firebase con sendBeacon (best-effort)
   if(db){
     try{
-      safeSetFirebase();
+      safeSetFirebase().catch(()=>{});
     } catch(e){}
   }
 });
@@ -2308,11 +2281,24 @@ function loadLocal(){
 
 function safeSetFirebase(){
   // Non usare questo per il salvataggio normale — usare notifyChange
-  if(!db) return;
+  if(!db) return Promise.resolve(false);
   const hasData = Object.keys(orders).some(k=>(orders[k].rows||[]).length > 0) || clients.length > 0;
-  if(!hasData){ return; }
-  db.ref('ordini_siculabrioche/v1').set({orders, clients})
-    .catch(e=>{ console.error('Firebase set error:', e); });
+  if(!hasData) return Promise.resolve(false);
+  return db.ref('ordini_siculabrioche/v1').set({orders, clients})
+    .then(()=>true)
+    .catch(e=>{ console.error('Firebase set error:', e); throw e; });
+}
+
+function removeSessionsFromFirebase(sessionIds){
+  if(!db || !sessionIds.length) return Promise.resolve(false);
+  const updates = {};
+  sessionIds.forEach(id=>{
+    updates['ordini_siculabrioche/v1/orders/' + id] = null;
+  });
+  isSaving = true;
+  return db.ref().update(updates)
+    .then(()=>true)
+    .finally(()=>{ isSaving = false; });
 }
 
 function initFirebase(){
@@ -2344,6 +2330,13 @@ function initFirebase(){
 
     // ── Listener: ascolta cambiamenti da altre colleghe ──
     let firstLoad = true;
+    const connectionTimeout = setTimeout(()=>{
+      if(!firstLoad) return;
+      firstLoad = false;
+      document.getElementById('loading').classList.remove('vis');
+      setSyncStatus('err','Offline · dati locali');
+      fallbackInit();
+    }, 8000);
 
     db.ref('ordini_siculabrioche/v1').on('value', snap=>{
       // Se stiamo salvando, ignora l'eco del nostro stesso salvataggio
@@ -2357,6 +2350,7 @@ function initFirebase(){
 
       if(firstLoad){
         firstLoad = false;
+        clearTimeout(connectionTimeout);
         document.getElementById('loading').classList.remove('vis');
 
         if(data && data.orders && Object.keys(data.orders).length > 0){
@@ -2372,7 +2366,10 @@ function initFirebase(){
           const hasLocal = Object.keys(orders).some(k=>(orders[k].rows||[]).length > 0);
           if(hasLocal){
             setSyncStatus('saving','Caricamento su Firebase…');
-            safeSetFirebase();
+            safeSetFirebase().catch(e=>{
+              console.error('Firebase initial upload error:', e);
+              setSyncStatus('err','Offline · dati locali');
+            });
           }
         }
         setSyncStatus('ok','Connesso ✓');
@@ -2421,6 +2418,7 @@ function initFirebase(){
       }
 
     }, err=>{
+      clearTimeout(connectionTimeout);
       console.error('Firebase listener error:', err);
       document.getElementById('loading').classList.remove('vis');
       setSyncStatus('err','Offline · dati locali');
@@ -2535,27 +2533,34 @@ document.getElementById('btnDeleteSession').addEventListener('click', ()=>{
   if(!currentSession || !orders[currentSession]) return;
   const ses = orders[currentSession];
   if(!confirm(`Eliminare la sessione del ${fmtDateSimple(ses.date)} con ${(ses.rows||[]).length} clienti?`)) return;
-  delete orders[currentSession];
+  const deletedSessionId = currentSession;
+  delete orders[deletedSessionId];
   currentSession = null;
   ensureSession();
   renderSessionSelector();
   renderGrid();
   renderProduzione();
   renderConfezionamento();
-  notifyChange();
+  saveLocal();
+  removeSessionsFromFirebase([deletedSessionId])
+    .then(()=>setSyncStatus('ok', db ? 'Eliminato ✓' : 'Salvato localmente ✓'))
+    .catch(()=>setSyncStatus('err','Errore eliminazione online'));
 });
 
 document.getElementById('btnDeleteEmptySessions').addEventListener('click', ()=>{
   const vuote = Object.keys(orders).filter(k=> !(orders[k].rows||[]).length);
   if(!vuote.length){ alert('Nessuna sessione vuota da eliminare.'); return; }
   if(!confirm(`Eliminare ${vuote.length} sessioni vuote (0 clienti)?`)) return;
-  vuote.forEach(k=>{ if(k !== currentSession) delete orders[k]; });
+  const deletedIds = vuote.filter(k=>k !== currentSession);
+  deletedIds.forEach(k=>delete orders[k]);
   renderSessionSelector();
   renderGrid();
   renderProduzione();
   renderConfezionamento();
-  notifyChange();
-  flashMsg(`✓ ${vuote.length} sessioni vuote eliminate`);
+  saveLocal();
+  removeSessionsFromFirebase(deletedIds)
+    .catch(()=>setSyncStatus('err','Errore eliminazione online'));
+  flashMsg(`✓ ${deletedIds.length} sessioni vuote eliminate`);
 });
 
 document.getElementById('btnPurgeByDate').addEventListener('click', ()=>{
@@ -2732,15 +2737,6 @@ document.getElementById('btnAddRow').addEventListener('click', ()=>{
   f.style.display = f.style.display==='none'?'flex':'none';
   if(f.style.display==='flex') document.getElementById('acInput').focus();
 });
-
-document.getElementById('btnCancelAdd').addEventListener('click', ()=>{
-  document.getElementById('addRowForm').style.display='none';
-  document.getElementById('acInput').value='';
-  selectedClient=null;
-  document.getElementById('recentOrderAlert').style.display='none';
-});
-
-document.getElementById('briocheTotale').addEventListener('input', ()=>updateBriocheCounter());
 
 // Carica personalizzazioni salvate in localStorage
 try{
